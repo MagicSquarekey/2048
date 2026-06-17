@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Logs
+*.log
+
+# Test Reports
+reports/
+htmlcov/
+.coverage
+
+# Environment
+.env
+.env.local
+
+# ============================================
+# 私有文件（不上传到 GitHub）
+# ============================================
+
+# 私有目录
+private/
+
+# 自动生成的报告
+*-报告*.md
+*-分析*.md
+
+# 临时文件
+*.tmp
+*.bak

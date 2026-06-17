@@ -1,0 +1,9 @@
+# -*- coding: utf-8 -*-
+# @Function: 项目依赖管理
+
+# 配置管理
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+
+# 网络请求
+requests>=2.31.0
