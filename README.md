@@ -1,105 +1,131 @@
-# AI 项目模板 / AI Project Template
+# 2048 休闲游戏
 
-🤖 一个通用的 AI 辅助开发项目起点 / A universal template for AI-assisted development
+一个经典的 2048 数字合成游戏，使用 Python + Pygame 开发，运行于 Windows 桌面。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+## 游戏特性
 
----
+### 核心玩法
+- **经典模式**: 无限时间，自由游玩
+- **挑战模式**: 限定步数内合成目标方块
+- **计时模式**: 在时间限制内尽可能合成大方块
 
-## 🚀 快速开始 / Quick Start
+### 道具系统
+- **撤销**: 撤回上一步操作
+- **清除**: 移除棋盘上随机一个方块
+- **复活**: 游戏结束后可使用道具继续
+
+### 社交功能
+- **排行榜**: 记录历史最佳成绩
+- **成就系统**: 解锁各种游戏成就
+- **分享功能**: 分享游戏成绩
+
+### 音效设置
+- 可开关游戏音效
+- 可开关背景音乐
+
+## 运行环境
+
+- Windows 10/11
+- Python 3.10+
+- Pygame 2.6+
+
+## 快速开始
+
+### 1. 安装依赖
 
 ```bash
-# 1. 复制模板 / Copy template
-# 直接复制 AI-XiangMuMoBan 文件夹，重命名为你的项目名
-
-# 2. 进入项目 / Enter project
-cd 你的项目名
-
-# 3. 安装依赖 / Install dependencies
 pip install -r requirements.txt
 ```
 
----
-
-## 📁 目录结构 / Directory Structure
-
-```
-AI-XiangMuMoBan/
-├── .claude/           # Claude 配置（自动生效）
-│   ├── commands/      # 快捷命令
-│   └── skills/        # 技能定义
-├── private/           # 私有文件（不上传 GitHub）
-├── .gitignore         # Git 忽略规则
-├── CLAUDE.md          # AI 指令
-├── README.md          # 项目说明（本文件）
-└── requirements.txt   # Python 依赖
-```
-
----
-
-## 🎯 快捷命令 / Quick Commands
-
-在 Claude Code 中使用这些命令：
-
-| 命令 | 用途 | Command |
-|------|------|---------|
-| `/plan` | 任务规划 | Task planning |
-| `/review` | 代码审查 | Code review |
-| `/fix` | 修复问题 | Bug fixing |
-| `/commit` | 提交代码 | Smart commit |
-| `/docs` | 文档同步 | Document sync |
-| `/status` | 查看状态 | Project status |
-
----
-
-## 📖 使用方法 / Usage
-
-### 创建新项目
-
-1. 复制 `AI-XiangMuMoBan` 文件夹
-2. 重命名为你的项目名
-3. 进入项目目录，开始开发
-
-### 开始开发
+### 2. 运行游戏
 
 ```bash
-cd 你的项目名
-pip install -r requirements.txt
-
-# 开始使用 Claude Code 开发
-# 输入 /plan 开始任务规划
+python src/main.py
 ```
 
----
+### 3. 打包为 EXE
 
-## 🔒 安全规范 / Security
+```bash
+pip install pyinstaller
+pyinstaller --onefile --windowed --name "2048 Game" src/main.py
+```
 
-### 绝对禁止 / Never Do
+## 项目结构
 
-- ❌ 不得提交 API Key、密码、密钥
-- ❌ 不得提交 .env 文件
-- ❌ 不得在代码中硬编码任何凭证
+```
+2048/
+├── src/
+│   ├── main.py              # 入口文件
+│   ├── config.py             # 全局配置
+│   ├── utils.py              # 工具函数
+│   ├── models/               # 数据模型
+│   │   ├── board.py          # 棋盘逻辑
+│   │   ├── tile.py           # 方块类
+│   │   ├── game_state.py     # 游戏状态
+│   │   ├── data_manager.py   # 数据管理
+│   │   ├── ad_manager.py     # 广告管理
+│   │   └── achievements.py   # 成就系统
+│   ├── views/                # 视图层
+│   │   ├── board_view.py     # 棋盘渲染
+│   │   ├── ui_components.py  # UI 组件
+│   │   ├── sound_manager.py  # 音效管理
+│   │   └── pages/            # 页面
+│   └── assets/               # 资源文件
+├── tests/                    # 测试文件
+├── requirements.txt          # 依赖列表
+├── build.py                  # 打包脚本
+└── README.md
+```
 
-### 发现安全问题时 / When发现安全问题
+## 游戏操作
 
-1. 立即停止提交
-2. 告知用户
-3. 清理 Git 历史（如已提交）
+- **方向键 / WASD**: 移动方块
+- **滑动**: 在棋盘上滑动移动方块
+- **P**: 暂停游戏
+- **ESC**: 返回主菜单
 
----
+## 数据存储
 
-## 📚 更多信息 / More Info
+游戏数据存储在用户目录下:
 
-- [CLAUDE.md](CLAUDE.md) - AI 指令 / AI Instructions
+```
+%LOCALAPPDATA%\2048_Game\
+├── game_data.json    # 主数据文件
+└── game_data.json.bak  # 自动备份
+```
 
----
+## 开发说明
 
-## 📄 许可证 / License
+### 代码规范
+- Python 文件头部: `# -*- coding: utf-8 -*-`
+- 类名: 大驼峰 (PascalCase)
+- 函数名: 小写下划线 (snake_case)
+- 常量: 全大写 (UPPER_SNAKE)
+
+### 测试
+```bash
+python -m pytest tests/ -v
+```
+
+## 许可证
 
 MIT License
 
+## 更新日志
+
+### v1.0.0 (2026-06-17)
+- 初始发布
+- 支持经典/挑战/计时三种游戏模式
+- 实现道具系统（撤销/清除/复活）
+- 音效与背景音乐支持
+- 成就系统
+- 数据备份与恢复
+- 本地广告管理（免费模式）
+
+## 作者
+
+AI 协作开发团队
+
 ---
 
-*最后更新 / Last Updated: 2026-06-17*
-*维护者 / Maintainer: AI 协作开发团队*
+**享受游戏！**
