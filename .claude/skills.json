@@ -1,0 +1,52 @@
+{
+  "skills": [
+    {
+      "name": "bilingual-comments",
+      "description": "为所有文件、代码、文档添加中英文注释",
+      "triggers": ["添加注释", "中英文注释", "翻译注释", "add comments", "bilingual comments"],
+      "file": ".claude/skills/bilingual-comments.md"
+    },
+    {
+      "name": "dep-check",
+      "description": "检查依赖安全性和未使用的依赖",
+      "triggers": ["检查依赖", "dependency check", "依赖检查"],
+      "file": ".claude/skills/dep-check.md"
+    },
+    {
+      "name": "temp-script",
+      "description": "运行临时测试脚本并在完成后自动删除",
+      "triggers": ["运行临时脚本", "测试脚本", "临时测试"],
+      "file": ".claude/skills/temp-script.md"
+    },
+    {
+      "name": "human-escalation",
+      "description": "多次尝试失败后，自动请求人工介入",
+      "triggers": ["自动触发 - 失败3次", "error loop", "超时未解决"],
+      "file": ".claude/skills/human-escalation.md"
+    },
+    {
+      "name": "error-recovery",
+      "description": "自动分析错误并尝试修复",
+      "triggers": ["报错", "错误", "error", "失败", "fix"],
+      "file": ".claude/skills/error-recovery.md"
+    },
+    {
+      "name": "doc-gen",
+      "description": "自动生成或更新项目文档",
+      "triggers": ["写文档", "更新文档", "生成文档", "write docs"],
+      "file": ".claude/skills/doc-gen.md"
+    },
+    {
+      "name": "code-gen",
+      "description": "根据项目规范自动生成代码",
+      "triggers": ["写代码", "实现", "编写", "创建", "implement", "create"],
+      "file": ".claude/skills/code-gen.md"
+    },
+    {
+      "name": "auto-review",
+      "description": "自动审查代码质量",
+      "triggers": ["审查代码", "code review", "检查代码"],
+      "file": ".claude/skills/auto-review.md"
+    }
+  ]
+}
