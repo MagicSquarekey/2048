@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""页面子包 — 菜单、游戏、设置、结果等页面 / Page sub-package — menu, game, settings, result, etc."""
 from src.views.pages.base_page import Page, PageManager
 from src.views.pages.menu_page import MenuPage
 from src.views.pages.game_page import GamePage

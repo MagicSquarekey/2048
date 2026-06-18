@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: 游戏页面 - 计分、棋盘、道具栏、交互
+# @Function: 游戏页面 - 计分、棋盘、道具栏、交互 / Game page - scoring, board, powerups, interaction
 
 import pygame
 import time
@@ -17,23 +17,24 @@ from src.config import (
     COLOR_BOARD_BG, SWIPE_THRESHOLD,
 )
 from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager, format_time
+from src.i18n import t
 from src.views.sound_manager import get_sound_manager
 
 
 class GamePage(Page):
-    """游戏页面"""
+    """游戏页面 / Game page"""
 
     def __init__(self) -> None:
         super().__init__("game")
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """初始化 UI"""
+        """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
 
         # 返回按钮
         self.btn_back = Button(
-            20, 15, 80, 36, "← 返回", font_size=16,
+            20, 15, 80, 36, t("back"), font_size=16,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_back,
         )
@@ -44,8 +45,8 @@ class GamePage(Page):
         total_w = box_w * 2 + gap
         start_x = cx - total_w // 2
 
-        self.score_box = ScoreBox(start_x, 12, box_w, box_h, "分数", 0)
-        self.best_box = ScoreBox(start_x + box_w + gap, 12, box_w, box_h, "最高分", 0)
+        self.score_box = ScoreBox(start_x, 12, box_w, box_h, t("current_score"), 0)
+        self.best_box = ScoreBox(start_x + box_w + gap, 12, box_w, box_h, t("best_score"), 0)
 
         # 模式/时间/步数提示
         self.mode_label = Label(cx, 95, "", font_size=18, color=(120, 110, 100), centered=True)
@@ -53,29 +54,29 @@ class GamePage(Page):
         # 棋盘视图
         self.board_view = BoardView()
 
-        # 道具栏
-        props_y = 530
+        # 道具栏 - 适配 600px 窗口高度
+        props_y = 550
         btn_w, btn_h = 100, 40
         props_cx = cx
         props_start_x = props_cx - (btn_w * 3 + 15 * 2) // 2
 
         self.btn_undo = Button(
             props_start_x, props_y, btn_w, btn_h,
-            "撤销", font_size=18,
+            t("undo"), font_size=18,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_undo,
         )
 
         self.btn_clean = Button(
             props_start_x + btn_w + 15, props_y, btn_w, btn_h,
-            "清理", font_size=18,
+            t("clean"), font_size=18,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_clean,
         )
 
         self.btn_revive = Button(
             props_start_x + (btn_w + 15) * 2, props_y, btn_w, btn_h,
-            "复活", font_size=18,
+            t("revive"), font_size=18,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_revive,
         )
@@ -97,27 +98,27 @@ class GamePage(Page):
         self._game_result = None
 
     def _on_back(self) -> None:
-        """返回按钮"""
+        """返回按钮 / Back button"""
         if self._game_state and self._game_state.state == GameState.STATE_PLAYING:
             self._game_state.pause()
         self._target_page = "menu"
 
     def _on_undo(self) -> None:
-        """撤销道具"""
+        """撤销道具 / Undo powerup"""
         if self._game_state:
             if self._game_state.undo():
                 self._update_props_ui()
                 get_sound_manager().play_sfx("undo")
 
     def _on_clean(self) -> None:
-        """清理道具"""
+        """清理道具 / Clean powerup"""
         if self._game_state:
             if self._game_state.use_clean():
                 self._update_props_ui()
                 get_sound_manager().play_sfx("clean")
 
     def _on_revive(self) -> None:
-        """复活（广告）"""
+        """复活（广告） / Revive via ad"""
         if not self._game_state or not self._game_state.board:
             return
         dm = DataManager()
@@ -133,13 +134,13 @@ class GamePage(Page):
         get_sound_manager().play_sfx("revive")
 
     def _update_props_ui(self) -> None:
-        """更新道具 UI 显示"""
+        """更新道具 UI 显示 / Update powerup UI display"""
         if self._game_state:
             self.undo_label.set_text(f"x{self._game_state.undo_count}")
             self.clean_label.set_text(f"x{self._game_state.clean_count}")
 
     def on_enter(self, **kwargs: Any) -> None:
-        """进入游戏页面"""
+        """进入游戏页面 / Enter game page"""
         super().on_enter(**kwargs)
         self._target_page = None
         self._game_result = None
@@ -165,7 +166,7 @@ class GamePage(Page):
         self._update_props_ui()
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
-        """处理事件"""
+        """处理事件 / Handle event"""
         # 按钮事件
         for btn in self.buttons:
             btn.handle_event(event)
@@ -199,8 +200,8 @@ class GamePage(Page):
 
         return None
 
-    def _handle_swipe(self, end_pos: Tuple[int, int]) -> None:
-        """处理滑动手势"""
+    def _handle_swipe(self, end_pos: tuple) -> None:
+        """处理滑动手势 / Handle swipe gesture"""
         if not self._swipe_start:
             return
         dx = end_pos[0] - self._swipe_start[0]
@@ -214,7 +215,7 @@ class GamePage(Page):
         self._do_move(direction)
 
     def _do_move(self, direction: str) -> None:
-        """Execute move"""
+        """执行移动 / Execute move"""
         if not self._game_state or self._game_state.state != GameState.STATE_PLAYING:
             return
         self._game_state.save_for_undo()
@@ -241,7 +242,7 @@ class GamePage(Page):
                 self._save_game_result()
 
     def _save_game_result(self) -> None:
-        """保存游戏结果"""
+        """保存游戏结果 / Save game result"""
         if not self._game_state:
             return
         result = self._game_state.get_result()
@@ -255,7 +256,7 @@ class GamePage(Page):
         self._target_page = "result"
 
     def update(self, dt: float) -> Optional[str]:
-        """更新"""
+        """更新 / Update"""
         if self._game_state:
             self._game_state.update()
         self.board_view.update(dt)
@@ -272,7 +273,7 @@ class GamePage(Page):
         return None
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制游戏页面"""
+        """绘制游戏页面 / Draw game page"""
         surface.fill(COLOR_BG)
 
         # 顶栏
@@ -300,7 +301,7 @@ class GamePage(Page):
             overlay.fill((0, 0, 0, 100))
             surface.blit(overlay, (0, 0))
             font = get_font_manager().get_large(bold=True)
-            draw_text_centered(surface, "游戏结束", font, (255, 255, 255),
+            draw_text_centered(surface, t("game_over"), font, (255, 255, 255),
                              (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 20))
             font_sm = get_font_manager().get_small()
             draw_text_centered(surface, "点击任意按钮继续", font_sm, (200, 200, 200),
@@ -315,5 +316,5 @@ class GamePage(Page):
         self.revive_label.draw(surface)
 
     def get_game_result(self) -> Optional[dict]:
-        """获取游戏结果（供结算页面使用）"""
+        """获取游戏结果（供结算页面使用）/ Get game result (for result page)"""
         return self._game_result

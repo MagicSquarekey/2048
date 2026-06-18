@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: 暂停页面 - 游戏暂停叠加层
+# @Function: 暂停页面 / Pause Page - 游戏暂停叠加层
 
 import pygame
 from typing import Optional, Any
@@ -17,14 +17,14 @@ from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
 
 
 class PausePage(Page):
-    """暂停页面 - 覆盖在游戏页面上方"""
+    """暂停页面 - 覆盖在游戏页面上方 / Pause page - overlay on game page"""
 
     def __init__(self) -> None:
         super().__init__("pause")
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """初始化 UI"""
+        """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
         cy = WINDOW_HEIGHT // 2
         btn_w, btn_h = 220, 50
@@ -59,17 +59,17 @@ class PausePage(Page):
         self._result: Optional[str] = None
 
     def _set_result(self, result: str) -> None:
-        """设置操作结果"""
+        """设置操作结果 / Set operation result"""
         self._result = result
         get_sound_manager().play("click")
 
     def on_enter(self, **kwargs: Any) -> None:
-        """进入暂停页面"""
+        """进入暂停页面 / Enter pause page"""
         super().on_enter(**kwargs)
         self._result = None
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
-        """处理事件"""
+        """处理事件 / Handle events"""
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             # ESC 直接恢复
             return "resume"
@@ -85,7 +85,7 @@ class PausePage(Page):
         return None
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制暂停页面（半透明叠加层）"""
+        """绘制暂停页面（半透明叠加层）/ Draw pause page (translucent overlay)"""
         # 半透明遮罩
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
         overlay.fill(COLOR_OVERLAY)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: 结算页面 - 游戏结束/获胜展示
+# @Function: 结算页面 / Result page - 游戏结束/获胜展示
 
 import pygame
 from typing import Optional, Any
@@ -12,17 +12,18 @@ from src.config import (
     COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
 )
 from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
+from src.i18n import t
 
 
 class ResultPage(Page):
-    """结算页面"""
+    """结算页面 / Result page"""
 
     def __init__(self) -> None:
         super().__init__("result")
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """初始化 UI"""
+        """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
 
         # 结果面板
@@ -36,7 +37,7 @@ class ResultPage(Page):
                                 bold=True, centered=True)
 
         # 分数
-        self.score_title = Label(cx, panel_y + 90, "最终得分", font_size=16,
+        self.score_title = Label(cx, panel_y + 90, t("final_score"), font_size=16,
                                 color=(150, 140, 130), centered=True)
         self.score_label = Label(cx, panel_y + 120, "0", font_size=48,
                                 color=(119, 110, 101), bold=True, centered=True)
@@ -51,14 +52,14 @@ class ResultPage(Page):
 
         self.btn_retry = Button(
             cx - btn_w - 10, btn_y, btn_w, btn_h,
-            "再来一局", font_size=22,
+            t("play_again"), font_size=22,
             color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
             callback=self._on_retry,
         )
 
         self.btn_menu = Button(
             cx + 10, btn_y, btn_w, btn_h,
-            "返回主菜单", font_size=22,
+            t("back_to_menu"), font_size=22,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_menu,
         )
@@ -68,37 +69,39 @@ class ResultPage(Page):
         self._result_data = {}
 
     def _on_retry(self) -> None:
-        """再来一局"""
+        """点击重试 / Click retry"""
+        self._target_page = "game"
         self._target_page = "game"
 
     def _on_menu(self) -> None:
-        """返回主菜单"""
+        """点击重试 / Click retry"""
+        self._target_page = "menu"
         self._target_page = "menu"
 
     def on_enter(self, **kwargs: Any) -> None:
-        """进入结算页面"""
+        """进入结算页面 / Enter result page"""
         super().on_enter(**kwargs)
         self._target_page = None
         self._result_data = kwargs.get("result", {})
         self._update_display()
 
     def _update_display(self) -> None:
-        """更新显示内容"""
+        """更新显示内容 / Update display content"""
         data = self._result_data
         if not data:
             return
 
         # 标题
         is_win = data.get("is_win", False)
-        self.title_label.set_text("🎉 恭喜获胜!" if is_win else "游戏结束")
+        self.title_label.set_text(t("you_win") if is_win else t("game_over"))
 
         # 分数
         score = data.get("score", 0)
         self.score_label.set_text(str(score))
 
         # 统计信息
-        mode_names = {"classic": "经典", "timed": "限时", "challenge": "挑战"}
-        mode = mode_names.get(data.get("mode", "classic"), "经典")
+        mode_names = {"classic": t("mode_classic"), "timed": t("mode_timed"), "challenge": t("mode_challenge")}
+        mode = mode_names.get(data.get("mode", "classic"), t("mode_classic"))
         max_tile = data.get("max_tile", 0)
         move_count = data.get("move_count", 0)
         elapsed = data.get("elapsed_time", 0)
@@ -106,10 +109,10 @@ class ResultPage(Page):
         seconds = int(elapsed) % 60
 
         stats = [
-            f"模式: {mode}",
-            f"最大方块: {max_tile}",
-            f"移动步数: {move_count}",
-            f"用时: {minutes:02d}:{seconds:02d}",
+            f"{t('mode_label')}: {mode}",
+            f"{t('max_tile')}: {max_tile}",
+            f"{t('move_count')}: {move_count}",
+            f"{t('elapsed_time')}: {minutes:02d}:{seconds:02d}",
         ]
 
         self.stat_labels = []
@@ -119,13 +122,13 @@ class ResultPage(Page):
             self.stat_labels.append((stat, cx, self.stats_y + i * 25))
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
-        """处理事件"""
+        """处理事件 / Handle event"""
         for btn in self.buttons:
             btn.handle_event(event)
         return None
 
     def update(self, dt: float) -> Optional[str]:
-        """更新"""
+        """更新 / Update"""
         for btn in self.buttons:
             btn.update(dt)
         if self._target_page:
@@ -135,7 +138,7 @@ class ResultPage(Page):
         return None
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制结算页面"""
+        """绘制结算页面 / Draw result page"""
         surface.fill(COLOR_BG)
 
         # 面板

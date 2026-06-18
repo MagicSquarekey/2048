@@ -1,0 +1,8 @@
+L40: self.score_title = Label(cx, panel_y + 90, "最终得分", font_size=16,
+L96: self.title_label.set_text("🎉 恭喜获胜!" if is_win else t("game_over"))
+L103: mode_names = {"classic": "经典", "timed": "限时", "challenge": "挑战"}
+L104: mode = mode_names.get(data.get("mode", "classic"), "经典")
+L112: f"模式: {mode}",
+L113: f"最大方块: {max_tile}",
+L114: f"移动步数: {move_count}",
+L115: f"用时: {minutes:02d}:{seconds:02d}",

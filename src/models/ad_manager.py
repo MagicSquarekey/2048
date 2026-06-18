@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: AdManager - 广告管理器（本地免费模式）
+# @Function: AdManager - 广告管理器（本地免费模式）/ Ad Manager (local free mode)
 
 import time
 from typing import Optional
@@ -11,23 +11,25 @@ from src.config import FREE_DAILY_LIMIT, AD_REWARD_AMOUNT, AD_COOLDOWN
 class AdManager:
     """
     广告管理器 - 本地免费模式
+    Ad Manager - Local free mode
     
     在没有真实广告 SDK 的情况下，提供本地免费模式：
-    - 每日免费观看次数限制
-    - 观看间隔冷却时间
-    - 奖励发放
+    Provides local free mode without real ad SDK:
+    - 每日免费观看次数限制 / Daily free view limit
+    - 观看间隔冷却时间 / Cooldown between views
+    - 奖励发放 / Reward distribution
     """
 
     _instance: Optional["AdManager"] = None
 
     def __new__(cls) -> "AdManager":
-        """单例模式"""
+        """单例模式 / Singleton pattern"""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self) -> None:
-        """初始化广告管理器"""
+        """初始化广告管理器 / Initialize ad manager"""
         if hasattr(self, "_initialized"):
             return
         self._initialized = True
@@ -38,9 +40,10 @@ class AdManager:
     def can_view_ad(self) -> bool:
         """
         检查是否可以观看广告
+        Check if an ad can be viewed
         
         Returns:
-            是否可以观看
+            是否可以观看 / Whether ad can be viewed
         """
         ad_stats = self._data_manager.get("ad_stats", {})
         daily_count = ad_stats.get("daily_ad_count", 0)
@@ -68,9 +71,10 @@ class AdManager:
     def get_remaining_cooldown(self) -> float:
         """
         获取剩余冷却时间（秒）
+        Get remaining cooldown in seconds
         
         Returns:
-            剩余冷却时间，0 表示无冷却
+            剩余冷却时间，0 表示无冷却 / Remaining cooldown, 0 means no cooldown
         """
         ad_stats = self._data_manager.get("ad_stats", {})
         last_time = ad_stats.get("last_ad_time", 0)
@@ -83,9 +87,10 @@ class AdManager:
     def get_remaining_views(self) -> int:
         """
         获取今日剩余免费观看次数
+        Get remaining free views today
         
         Returns:
-            剩余次数
+            剩余次数 / Remaining view count
         """
         ad_stats = self._data_manager.get("ad_stats", {})
         daily_count = ad_stats.get("daily_ad_count", 0)
@@ -101,12 +106,13 @@ class AdManager:
     def view_ad(self, reward_type: str = "undo") -> bool:
         """
         观看广告（本地模拟）
+        Watch ad (local simulation)
         
         Args:
-            reward_type: 奖励类型 ("undo", "clean", "revive")
+            reward_type: 奖励类型 ("undo", "clean", "revive") / Reward type
             
         Returns:
-            是否观看成功
+            是否观看成功 / Whether ad was viewed successfully
         """
         if not self.can_view_ad():
             return False
@@ -133,18 +139,20 @@ class AdManager:
     def is_viewing(self) -> bool:
         """
         是否正在观看广告
+        Check if ad is currently being viewed
         
         Returns:
-            是否正在观看
+            是否正在观看 / Whether ad is being viewed
         """
         return self._is_viewing
 
     def get_ad_info(self) -> dict:
         """
         获取广告信息摘要
+        Get ad information summary
         
         Returns:
-            广告信息字典
+            广告信息字典 / Ad information dictionary
         """
         return {
             "can_view": self.can_view_ad(),
@@ -156,5 +164,5 @@ class AdManager:
 
 
 def get_ad_manager() -> AdManager:
-    """获取广告管理器单例"""
+    """获取广告管理器单例 / Get AdManager singleton"""
     return AdManager()

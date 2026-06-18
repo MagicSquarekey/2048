@@ -10,10 +10,10 @@ from src.models.tile import Tile
 
 
 class GameBoard:
-    """2048 棋盘核心模型"""
+    """2048 棋盘核心模型 / 2048 Board core model"""
 
     def __init__(self, size: int = BOARD_SIZE) -> None:
-        """初始化空棋盘"""
+        """初始化空棋盘 / Initialize empty board"""
         self.size: int = size
         self.grid: List[List[Optional[Tile]]] = [
             [None for _ in range(size)] for _ in range(size)
@@ -30,7 +30,7 @@ class GameBoard:
         self.moved_tiles: List[Tuple[int, int, int, int]] = []  # (from_r, from_c, to_r, to_c)
 
     def reset(self) -> None:
-        """重置棋盘"""
+        """重置棋盘 / Reset board"""
         self.grid = [
             [None for _ in range(self.size)] for _ in range(self.size)
         ]
@@ -48,13 +48,13 @@ class GameBoard:
             self._spawn_tile()
 
     def get_tile(self, row: int, col: int) -> Optional[Tile]:
-        """获取指定位置的方块"""
+        """获取指定位置的方块 / Get tile at specified position"""
         if 0 <= row < self.size and 0 <= col < self.size:
             return self.grid[row][col]
         return None
 
     def set_tile(self, row: int, col: int, tile: Optional[Tile]) -> None:
-        """设置指定位置的方块"""
+        """设置指定位置的方块 / Set tile at specified position"""
         if 0 <= row < self.size and 0 <= col < self.size:
             self.grid[row][col] = tile
             if tile:
@@ -62,7 +62,7 @@ class GameBoard:
                 tile.col = col
 
     def get_empty_cells(self) -> List[Tuple[int, int]]:
-        """获取所有空单元格"""
+        """获取所有空单元格 / Get all empty cells"""
         cells = []
         for r in range(self.size):
             for c in range(self.size):
@@ -71,7 +71,7 @@ class GameBoard:
         return cells
 
     def _spawn_tile(self) -> Optional[Tile]:
-        """在空位置随机生成新方块"""
+        """在空位置随机生成新方块 / Spawn a new tile at a random empty cell"""
         empty_cells = self.get_empty_cells()
         if not empty_cells:
             return None
@@ -86,13 +86,13 @@ class GameBoard:
 
     def move(self, direction: str) -> bool:
         """
-        执行滑动操作
+        执行滑动操作 / Execute a slide operation
         
         Args:
-            direction: 方向 "up", "down", "left", "right"
+            direction: 方向 "up", "down", "left", "right" / Direction
             
         Returns:
-            是否发生了移动（棋盘状态改变）
+            是否发生了移动（棋盘状态改变） / Whether the board state changed
         """
         if self.is_game_over:
             return False
@@ -129,7 +129,7 @@ class GameBoard:
         return False
 
     def _slide_left(self) -> bool:
-        """向左滑动"""
+        """向左滑动 / Slide left"""
         moved = False
         for row in range(self.size):
             # 提取非空方块
@@ -150,7 +150,7 @@ class GameBoard:
         return moved
 
     def _slide_right(self) -> bool:
-        """向右滑动"""
+        """向右滑动 / Slide right"""
         moved = False
         for row in range(self.size):
             # 提取非空方块（反序）
@@ -171,7 +171,7 @@ class GameBoard:
         return moved
 
     def _slide_up(self) -> bool:
-        """向上滑动"""
+        """向上滑动 / Slide up"""
         moved = False
         for col in range(self.size):
             # 提取列中的非空方块
@@ -192,7 +192,7 @@ class GameBoard:
         return moved
 
     def _slide_down(self) -> bool:
-        """向下滑动"""
+        """向下滑动 / Slide down"""
         moved = False
         for col in range(self.size):
             # 提取列中的非空方块（反序）
@@ -214,10 +214,10 @@ class GameBoard:
 
     def _merge_line(self, tiles: List[Tile]) -> List[Tile]:
         """
-        合并一行/列中的相同方块
+        合并一行/列中的相同方块 / Merge identical tiles in a line
         
-        算法：从左到右扫描，相邻相同则合并为一个更大的方块
-        每次移动每个位置最多合并一次
+        算法：从左到右扫描，相邻相同则合并为一个更大的方块 / Scan left-to-right, merge adjacent identical tiles
+        每次移动每个位置最多合并一次 / Each position merges at most once per move
         """
         result = []
         skip = False
@@ -250,7 +250,7 @@ class GameBoard:
         return result
 
     def _check_game_state(self) -> None:
-        """检查游戏是否结束"""
+        """检查游戏是否结束 / Check if the game is over"""
         # 如果棋盘未满，游戏继续
         if len(self.get_empty_cells()) > 0:
             return
@@ -270,7 +270,7 @@ class GameBoard:
         self.is_game_over = True
 
     def can_move(self) -> bool:
-        """检查是否还能移动"""
+        """检查是否还能移动 / Check if any move is possible"""
         # 有空位就能移动
         if len(self.get_empty_cells()) > 0:
             return True
@@ -287,24 +287,24 @@ class GameBoard:
         return False
 
     def continue_after_win(self) -> None:
-        """获胜后继续游戏"""
+        """获胜后继续游戏 / Continue playing after winning"""
         self.keep_playing = True
         self.is_won = False
 
     def _clone_grid(self) -> List[List[Optional[Tile]]]:
-        """深拷贝棋盘"""
+        """深拷贝棋盘 / Deep copy the grid"""
         return copy.deepcopy(self.grid)
 
     def undo(self, prev_grid: List[List[Optional[Tile]]], prev_score: int) -> bool:
         """
-        撤销上一步操作
+        撤销上一步操作 / Undo the last move
         
         Args:
-            prev_grid: 移动前的棋盘状态
-            prev_score: 移动前的分数
+            prev_grid: 移动前的棋盘状态 / Grid state before the move
+            prev_score: 移动前的分数 / Score before the move
             
         Returns:
-            是否撤销成功
+            是否撤销成功 / Whether undo was successful
         """
         self.grid = prev_grid
         self.score = prev_score
@@ -313,10 +313,11 @@ class GameBoard:
 
     def clean_min_tile(self) -> Optional[Tuple[int, int]]:
         """
-        清理最小的方块
+        清理最小的方块 / Clean the smallest tile
         
         Returns:
-            被清理的方块位置，如果没有可清理的方块则返回 None
+            被清理的方块位置 / Position of the cleaned tile
+            如果没有可清理的方块则返回 None / None if no tile can be cleaned
         """
         min_val = float("inf")
         min_pos = None
@@ -331,7 +332,7 @@ class GameBoard:
         return min_pos
 
     def get_all_tiles(self) -> List[Tile]:
-        """获取所有方块"""
+        """获取所有方块 / Get all tiles"""
         tiles = []
         for row in range(self.size):
             for col in range(self.size):
@@ -340,7 +341,7 @@ class GameBoard:
         return tiles
 
     def to_dict(self) -> dict:
-        """序列化棋盘状态"""
+        """序列化棋盘状态 / Serialize board state"""
         tiles_data = []
         for row in range(self.size):
             for col in range(self.size):
@@ -359,7 +360,7 @@ class GameBoard:
 
     @classmethod
     def from_dict(cls, data: dict) -> "GameBoard":
-        """从字典恢复棋盘"""
+        """从字典恢复棋盘 / Restore board from dictionary"""
         board = cls(size=data.get("size", BOARD_SIZE))
         board.score = data.get("score", 0)
         board.move_count = data.get("move_count", 0)
@@ -373,6 +374,7 @@ class GameBoard:
         return board
 
     def __repr__(self) -> str:
+        """棋盘的字符串表示 / String representation of the board"""
         lines = []
         lines.append(f"GameBoard(score={self.score}, moves={self.move_count})")
         for row in range(self.size):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: 2048 游戏主入口
+# @Function: 2048 游戏主入口 / 2048 Game main entry point
 
 import sys
 import os
@@ -17,7 +17,7 @@ from src.views.pages import (
 
 
 def init_pygame() -> pygame.Surface:
-    """初始化 Pygame"""
+    """初始化 Pygame / Initialize Pygame"""
     pygame.init()
     pygame.display.set_caption("2048 - 休闲游戏")
     surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -25,7 +25,7 @@ def init_pygame() -> pygame.Surface:
 
 
 def register_pages() -> PageManager:
-    """注册所有页面"""
+    """注册所有页面 / Register all pages"""
     pm = PageManager()
     pm.register_page(MenuPage())
     pm.register_page(GamePage())
@@ -38,15 +38,15 @@ def register_pages() -> PageManager:
 
 
 def main() -> None:
-    """主函数"""
+    """主函数 / Main entry point"""
     surface = init_pygame()
     clock = pygame.time.Clock()
     pm = register_pages()
 
     # 设置页面路由
     def handle_page_switch(page_name: str) -> None:
-        """处理页面切换"""
-        if page_name == "game":
+        """处理页面切换 / Handle page switch"""
+        if page_name == "game" or page_name == "classic":
             game_page = pm.get_page("game")
             if game_page:
                 pm.switch_to("game", mode="classic")

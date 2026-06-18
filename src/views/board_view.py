@@ -20,11 +20,11 @@ from src.utils import (
 
 
 class TileRenderer:
-    """方块渲染器"""
+    """方块渲染器 / Tile renderer"""
 
     @staticmethod
     def get_tile_rect(row: int, col: int) -> pygame.Rect:
-        """获取方块在屏幕上的矩形区域"""
+        """获取方块在屏幕上的矩形区域 / Get tile screen rectangle"""
         x = BOARD_X + col * (TILE_SIZE + TILE_GAP) + BOARD_PADDING
         y = BOARD_Y + row * (TILE_SIZE + TILE_GAP) + BOARD_PADDING
         return pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
@@ -84,7 +84,7 @@ class TileRenderer:
 
 
 class BoardView:
-    """棋盘视图 - 负责整个棋盘的渲染和动画"""
+    """棋盘视图 - 负责整个棋盘的渲染和动画 / Board view - manages board rendering and animation"""
 
     def __init__(self) -> None:
         self.animations: List[dict] = []
@@ -97,7 +97,7 @@ class BoardView:
         )
 
     def start_move_animation(self, board: GameBoard) -> None:
-        """开始移动动画"""
+        """开始移动动画 / Start move animation"""
         self.animations = []
         self.is_animating = True
         self._anim_start = time.time()
@@ -119,7 +119,7 @@ class BoardView:
             self.animations.append(anim_data)
 
     def update(self, dt: float) -> None:
-        """更新动画"""
+        """更新动画 / Update animations"""
         if not self.is_animating:
             return
         # 检查所有动画是否完成
@@ -137,7 +137,7 @@ class BoardView:
                 anim["tile"].reset_animation()
 
     def draw(self, surface: pygame.Surface, board: GameBoard) -> None:
-        """绘制棋盘"""
+        """绘制棋盘 / Draw board"""
         # 绘制棋盘背景
         draw_rounded_rect(surface, COLOR_BOARD_BG, self.board_rect, 12)
 
@@ -172,14 +172,14 @@ class BoardView:
                 TileRenderer.draw_tile(surface, tile, 1.0, 1.0)
 
     def _find_animation(self, tile: Tile) -> Optional[dict]:
-        """查找方块对应的动画"""
+        """查找方块对应的动画 / Find animation for tile"""
         for anim in self.animations:
             if anim["tile"] is tile:
                 return anim
         return None
 
     def get_cell_from_pos(self, pos: Tuple[int, int]) -> Optional[Tuple[int, int]]:
-        """根据屏幕坐标获取棋盘格子位置"""
+        """根据屏幕坐标获取棋盘格子位置 / Get board cell from screen coordinates"""
         x, y = pos
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):

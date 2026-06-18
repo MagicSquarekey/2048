@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: 成就页面
+# @Function: 成就页面 / Achievements page
 
 import pygame
 from typing import Optional, Any
@@ -16,14 +16,14 @@ from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
 
 
 class AchievementsPage(Page):
-    """成就页面"""
+    """成就页面 / Achievements page"""
 
     def __init__(self) -> None:
         super().__init__("achievements")
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """初始化 UI"""
+        """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
 
         # 标题
@@ -49,23 +49,23 @@ class AchievementsPage(Page):
         self._achievements = []
 
     def _on_back(self) -> None:
-        """返回"""
+        """返回 / Go back"""
         self._target_page = "menu"
 
     def on_enter(self, **kwargs: Any) -> None:
-        """进入页面"""
+        """进入页面 / Enter page"""
         super().on_enter(**kwargs)
         self._target_page = None
         self._achievements = get_all_achievements()
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
-        """处理事件"""
+        """处理事件 / Handle event"""
         for btn in self.buttons:
             btn.handle_event(event)
         return None
 
     def update(self, dt: float) -> Optional[str]:
-        """更新"""
+        """更新 / Update"""
         for btn in self.buttons:
             btn.update(dt)
         if self._target_page:
@@ -75,7 +75,7 @@ class AchievementsPage(Page):
         return None
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制成就页面"""
+        """绘制成就页面 / Draw achievements page"""
         surface.fill(COLOR_BG)
 
         # 标题

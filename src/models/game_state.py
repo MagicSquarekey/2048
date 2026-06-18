@@ -8,7 +8,7 @@ from src.models.board import GameBoard
 
 
 class GameState:
-    """游戏运行时状态"""
+    """游戏运行时状态 / Runtime game state"""
 
     # 游戏状态常量
     STATE_IDLE = "idle"             # 未开始
@@ -18,7 +18,7 @@ class GameState:
     STATE_GAME_OVER = "game_over"   # 游戏结束
 
     def __init__(self) -> None:
-        """初始化游戏状态"""
+        """初始化游戏状态 / Initialize game state"""
         self.state: str = self.STATE_IDLE
         self.mode: str = "classic"           # 游戏模式
         self.board: Optional[GameBoard] = None
@@ -66,19 +66,19 @@ class GameState:
         return self.board
 
     def pause(self) -> None:
-        """暂停游戏"""
+        """暂停游戏 / Pause the game"""
         if self.state == self.STATE_PLAYING:
             self.state = self.STATE_PAUSED
             self.pause_time = time.time()
 
     def resume(self) -> None:
-        """恢复游戏"""
+        """恢复游戏 / Resume the game"""
         if self.state == self.STATE_PAUSED:
             self.state = self.STATE_PLAYING
             self.total_pause_duration += time.time() - self.pause_time
 
     def update(self) -> None:
-        """更新游戏状态（每帧调用）"""
+        """更新游戏状态（每帧调用） / Update game state (called each frame)"""
         if self.state != self.STATE_PLAYING or not self.board:
             return
 
@@ -98,19 +98,19 @@ class GameState:
             self.state = self.STATE_GAME_OVER
 
     def get_elapsed_time(self) -> float:
-        """获取已用游戏时间（扣除暂停时间）"""
+        """获取已用游戏时间（扣除暂停时间）/ Get elapsed game time (excluding pause time)"""
         if self.state == self.STATE_PAUSED:
             return self.pause_time - self.start_time - self.total_pause_duration
         return time.time() - self.start_time - self.total_pause_duration
 
     def save_for_undo(self) -> None:
-        """保存当前状态用于撤销"""
+        """保存当前状态用于撤销 / Save current state for undo"""
         if self.board:
             self.prev_board_state = self.board._clone_grid()
             self.prev_score = self.board.score
 
     def undo(self) -> bool:
-        """撤销上一步"""
+        """撤销上一步 / Undo the last move"""
         if not self.board or not self.prev_board_state:
             return False
         if self.undo_count <= 0:
@@ -123,7 +123,7 @@ class GameState:
         return success
 
     def use_clean(self) -> bool:
-        """使用清理道具"""
+        """使用清理道具 / Use clean tile power-up"""
         if not self.board:
             return False
         if self.clean_count <= 0:
@@ -135,15 +135,15 @@ class GameState:
         return False
 
     def add_undo_count(self, count: int = 1) -> None:
-        """增加撤销次数"""
+        """增加撤销次数 / Add undo count"""
         self.undo_count += count
 
     def add_clean_count(self, count: int = 1) -> None:
-        """增加清理次数"""
+        """增加清理次数 / Add clean count"""
         self.clean_count += count
 
     def get_result(self) -> Dict[str, Any]:
-        """获取游戏结果"""
+        """获取游戏结果 / Get game result"""
         if not self.board:
             return {}
         return {
@@ -157,6 +157,6 @@ class GameState:
         }
 
     def _get_mode_config(self) -> Dict[str, Any]:
-        """获取当前模式配置"""
+        """获取当前模式配置 / Get current mode configuration"""
         from src.config import MODE_CONFIG
         return MODE_CONFIG.get(self.mode, {})

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: 成就系统定义与检测
+# @Function: 成就系统定义与检测 / Achievement system definitions and detection
 
 from typing import Dict, List, Optional
 from src.models.data_manager import DataManager
@@ -71,14 +71,15 @@ def check_achievements(
 ) -> List[str]:
     """
     检查并返回新达成的成就 ID 列表
+    Check and return list of newly achieved achievement IDs
     
     Args:
-        max_tile: 当前最大方块值
-        total_games: 累计游戏局数
-        high_score: 历史最高分
+        max_tile: 当前最大方块值 / Current max tile value
+        total_games: 累计游戏局数 / Total games played
+        high_score: 历史最高分 / Historical high score
         
     Returns:
-        新达成的成就 ID 列表
+        新达成的成就 ID 列表 / List of newly achieved achievement IDs
     """
     dm = DataManager()
     new_achievements = []
@@ -117,12 +118,12 @@ def check_achievements(
 
 
 def get_achievement_info(achievement_id: str) -> Optional[Dict]:
-    """获取成就信息"""
+    """获取成就信息 / Get achievement info"""
     return ACHIEVEMENTS.get(achievement_id)
 
 
 def get_all_achievements() -> List[Dict]:
-    """获取所有成就列表"""
+    """获取所有成就列表 / Get all achievements list"""
     dm = DataManager()
     result = []
     for ach_id, info in ACHIEVEMENTS.items():

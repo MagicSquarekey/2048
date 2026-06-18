@@ -11,12 +11,12 @@ from src.config import DATA_FILE, UNDO_LIMIT_DEFAULT, CLEAN_LIMIT_DEFAULT
 
 
 class DataManager:
-    """本地数据管理器 - JSON 持久化存储"""
+    """本地数据管理器 - JSON 持久化存储 / Local data manager with JSON persistence"""
 
     _instance: Optional["DataManager"] = None
 
     def __new__(cls) -> "DataManager":
-        """单例模式"""
+        """单例模式 / Singleton pattern"""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance._data = cls._instance._load_default()
@@ -24,7 +24,7 @@ class DataManager:
         return cls._instance
 
     def _load_default(self) -> Dict[str, Any]:
-        """获取默认数据结构"""
+        """获取默认数据结构 / Get default data structure"""
         return {
             "high_score": 0,
             "total_games": 0,
@@ -52,7 +52,7 @@ class DataManager:
         }
 
     def _load(self) -> None:
-        """从文件加载数据"""
+        """从文件加载数据 / Load data from file"""
         if os.path.exists(DATA_FILE):
             try:
                 with open(DATA_FILE, "r", encoding="utf-8") as f:
@@ -64,7 +64,7 @@ class DataManager:
                 self._recover_from_backup()
 
     def _merge_data(self, saved: Dict[str, Any]) -> None:
-        """合并保存的数据与默认数据"""
+        """合并保存的数据与默认数据 / Merge saved data with defaults"""
         default = self._load_default()
         for key in default:
             if key in saved:
@@ -77,10 +77,10 @@ class DataManager:
 
     def _recover_from_backup(self) -> bool:
         """
-        尝试从备份文件恢复数据
+        尝试从备份文件恢复数据 / Attempt to recover data from backup
         
         Returns:
-            是否恢复成功
+            是否恢复成功 / Whether recovery succeeded
         """
         backup_file = DATA_FILE + ".bak"
         if not os.path.exists(backup_file):
@@ -102,10 +102,10 @@ class DataManager:
 
     def get_recovery_status(self) -> str:
         """
-        获取数据恢复状态信息
+        获取数据恢复状态信息 / Get data recovery status
         
         Returns:
-            状态描述字符串
+            状态描述字符串 / Status description
         """
         backup_file = DATA_FILE + ".bak"
         if not os.path.exists(backup_file):
@@ -115,7 +115,7 @@ class DataManager:
         return "ok"
 
     def save(self) -> None:
-        """保存数据到文件（自动创建备份）"""
+        """保存数据到文件（自动创建备份） / Save data to file with auto-backup"""
         try:
             os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
             # 先备份旧文件
@@ -131,19 +131,19 @@ class DataManager:
             pass
 
     def get(self, key: str, default: Any = None) -> Any:
-        """获取数据"""
+        """获取数据 / Get data"""
         return self._data.get(key, default)
 
     def set(self, key: str, value: Any) -> None:
-        """设置数据"""
+        """设置数据 / Set data"""
         self._data[key] = value
 
     def update_high_score(self, score: int) -> bool:
         """
-        更新最高分
+        更新最高分 / Update high score
         
         Returns:
-            是否创造了新纪录
+            是否创造了新纪录 / Whether a new record was set
         """
         if score > self._data["high_score"]:
             self._data["high_score"] = score
@@ -153,10 +153,10 @@ class DataManager:
 
     def update_max_tile(self, tile: int) -> bool:
         """
-        更新最大方块
+        更新最大方块 / Update max tile
         
         Returns:
-            是否创造了新纪录
+            是否创造了新纪录 / Whether a new record was set
         """
         if tile > self._data["max_tile"]:
             self._data["max_tile"] = tile
@@ -165,12 +165,12 @@ class DataManager:
         return False
 
     def increment_games(self) -> None:
-        """增加游戏局数"""
+        """增加游戏局数 / Increment games played"""
         self._data["total_games"] += 1
         self.save()
 
     def update_mode_stats(self, mode: str, score: int) -> None:
-        """更新模式统计"""
+        """更新模式统计 / Update mode statistics"""
         stats = self._data["mode_stats"].get(mode, {"played": 0, "best_score": 0})
         stats["played"] += 1
         if score > stats["best_score"]:
@@ -180,10 +180,10 @@ class DataManager:
 
     def add_achievement(self, achievement_id: str) -> bool:
         """
-        添加成就
+        添加成就 / Add achievement
         
         Returns:
-            是否是新成就
+            是否是新成就 / Whether it's a new achievement
         """
         if achievement_id not in self._data["achievements"]:
             self._data["achievements"].append(achievement_id)
@@ -192,29 +192,29 @@ class DataManager:
         return False
 
     def has_achievement(self, achievement_id: str) -> bool:
-        """检查是否已获得成就"""
+        """检查是否已获得成就 / Check if achievement is unlocked"""
         return achievement_id in self._data["achievements"]
 
     def get_undo_count(self) -> int:
-        """获取剩余撤销次数"""
+        """获取剩余撤销次数 / Get remaining undo count"""
         return self._data.get("undo_count", UNDO_LIMIT_DEFAULT)
 
     def set_undo_count(self, count: int) -> None:
-        """设置撤销次数"""
+        """设置撤销次数 / Set undo count"""
         self._data["undo_count"] = count
         self.save()
 
     def get_clean_count(self) -> int:
-        """获取剩余清理次数"""
+        """获取剩余清理次数 / Get remaining clean count"""
         return self._data.get("clean_count", CLEAN_LIMIT_DEFAULT)
 
     def set_clean_count(self, count: int) -> None:
-        """设置清理次数"""
+        """设置清理次数 / Set clean count"""
         self._data["clean_count"] = count
         self.save()
 
     def can_watch_ad(self) -> bool:
-        """检查是否可以观看广告"""
+        """检查是否可以观看广告 / Check if ad can be watched"""
         ad_stats = self._data.get("ad_stats", {})
         today = time.strftime("%Y-%m-%d")
         if ad_stats.get("last_ad_date") != today:
@@ -222,7 +222,7 @@ class DataManager:
         return ad_stats.get("daily_ad_count", 0) < 5
 
     def record_ad_watch(self) -> None:
-        """记录广告观看"""
+        """记录广告观看 / Record ad watch"""
         today = time.strftime("%Y-%m-%d")
         ad_stats = self._data.get("ad_stats", {})
         if ad_stats.get("last_ad_date") != today:
@@ -234,17 +234,17 @@ class DataManager:
         self.save()
 
     def get_settings(self) -> Dict[str, Any]:
-        """获取设置"""
+        """获取设置 / Get settings"""
         return self._data.get("settings", {})
 
     def update_setting(self, key: str, value: Any) -> None:
-        """更新设置"""
+        """更新设置 / Update setting"""
         if "settings" not in self._data:
             self._data["settings"] = {}
         self._data["settings"][key] = value
         self.save()
 
     def reset_data(self) -> None:
-        """重置所有数据"""
+        """重置所有数据 / Reset all data"""
         self._data = self._load_default()
         self.save()

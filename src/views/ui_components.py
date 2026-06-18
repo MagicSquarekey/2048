@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: UI 基础组件 - Button、Label、Panel
+# @Function: UI 基础组件 - Button、Label、Panel / UI base components - Button, Label, Panel
 
 import pygame
 from typing import Tuple, Optional, Callable
@@ -14,7 +14,7 @@ from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager, p
 
 
 class UIComponent:
-    """UI 组件基类"""
+    """UI 组件基类 / UI component base class"""
 
     def __init__(self, x: int, y: int, width: int, height: int) -> None:
         self.rect = pygame.Rect(x, y, width, height)
@@ -22,25 +22,25 @@ class UIComponent:
         self.enabled: bool = True
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制组件"""
+        """绘制组件 / Draw component"""
         pass
 
     def handle_event(self, event: pygame.event.Event) -> bool:
-        """处理事件"""
+        """处理事件 / Handle event"""
         return False
 
     def update(self, dt: float) -> None:
-        """更新组件状态"""
+        """更新组件状态 / Update component state"""
         pass
 
     def set_position(self, x: int, y: int) -> None:
-        """设置位置"""
+        """设置位置 / Set position"""
         self.rect.x = x
         self.rect.y = y
 
 
 class Button(UIComponent):
-    """按钮组件"""
+    """按钮组件 / Button component"""
 
     def __init__(
         self,
@@ -68,7 +68,7 @@ class Button(UIComponent):
         self.is_pressed = False
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制按钮"""
+        """绘制按钮 / Draw button"""
         if not self.visible:
             return
         # 选择颜色
@@ -90,7 +90,7 @@ class Button(UIComponent):
         draw_text_centered(surface, self.text, font, text_color, self.rect.center)
 
     def handle_event(self, event: pygame.event.Event) -> bool:
-        """处理事件"""
+        """处理事件 / Handle event"""
         if not self.visible or not self.enabled:
             return False
 
@@ -109,7 +109,7 @@ class Button(UIComponent):
 
 
 class Label(UIComponent):
-    """标签组件"""
+    """标签组件 / Label component"""
 
     def __init__(
         self,
@@ -130,10 +130,14 @@ class Label(UIComponent):
         font = get_font_manager().get_font(font_size, bold)
         text_surface = font.render(text, True, color)
         w, h = text_surface.get_size()
-        super().__init__(x, y, w, h)
+        if centered:
+            # centered=True 时，(x, y) 表示文本中心点
+            super().__init__(x - w // 2, y - h // 2, w, h)
+        else:
+            super().__init__(x, y, w, h)
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制标签"""
+        """绘制标签 / Draw label"""
         if not self.visible:
             return
         font = get_font_manager().get_font(self.font_size, self.bold)
@@ -143,7 +147,7 @@ class Label(UIComponent):
             surface.blit(font.render(self.text, True, self.color), self.rect.topleft)
 
     def set_text(self, text: str) -> None:
-        """更新文字"""
+        """更新文字 / Update text"""
         self.text = text
         font = get_font_manager().get_font(self.font_size, self.bold)
         text_surface = font.render(text, True, self.color)
@@ -153,7 +157,7 @@ class Label(UIComponent):
 
 
 class Panel(UIComponent):
-    """面板组件"""
+    """面板组件 / Panel component"""
 
     def __init__(
         self,
@@ -175,7 +179,7 @@ class Panel(UIComponent):
         self.alpha = alpha
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制面板"""
+        """绘制面板 / Draw panel"""
         if not self.visible:
             return
         draw_rounded_rect(
@@ -185,7 +189,7 @@ class Panel(UIComponent):
 
 
 class ScoreBox(UIComponent):
-    """分数显示框"""
+    """分数显示框 / Score display box"""
 
     def __init__(
         self,
@@ -210,14 +214,14 @@ class ScoreBox(UIComponent):
         self._anim_speed = 0
 
     def set_value(self, value: int) -> None:
-        """设置分数值（带动画）"""
+        """设置分数值（带动画）/ Set score value (with animation)"""
         self._target_value = value
         if value > self.value:
             self._animating = True
             self._anim_speed = max(1, (value - self.value) // 20)
 
     def update(self, dt: float) -> None:
-        """更新动画"""
+        """更新动画 / Update animation"""
         if self._animating:
             if self.value < self._target_value:
                 self.value = min(self._target_value, self.value + self._anim_speed)
@@ -225,10 +229,9 @@ class ScoreBox(UIComponent):
                 self._animating = False
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制分数框"""
+        """绘制分数框 / Draw score box"""
         if not self.visible:
             return
-        draw_rounded_rect(surface, self.bg_color, self.rect, 6)
         # 标题
         font_sm = get_font_manager().get_small()
         draw_text_centered(surface, self.title, font_sm, self.title_color,

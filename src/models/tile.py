@@ -8,7 +8,7 @@ import time
 
 @dataclass
 class Tile:
-    """方块数据模型"""
+    """方块数据模型 / Tile data model"""
 
     value: int                              # 方块数值（2, 4, 8, ...）
     row: int                                # 行位置（0-3）
@@ -20,11 +20,11 @@ class Tile:
     animation_start: float = field(default_factory=time.time)
 
     def get_position(self) -> Tuple[int, int]:
-        """获取当前位置"""
+        """获取当前位置 / Get current position"""
         return (self.row, self.col)
 
     def set_position(self, row: int, col: int, save_prev: bool = True) -> None:
-        """设置新位置，可选保存旧位置用于动画"""
+        """设置新位置，可选保存旧位置用于动画 / Set new position, optionally save old for animation"""
         if save_prev:
             self.prev_row = self.row
             self.prev_col = self.col
@@ -32,7 +32,7 @@ class Tile:
         self.col = col
 
     def reset_animation(self) -> None:
-        """重置动画状态"""
+        """重置动画状态 / Reset animation state"""
         self.prev_row = None
         self.prev_col = None
         self.merged_from = None
@@ -40,7 +40,7 @@ class Tile:
         self.animation_start = time.time()
 
     def to_dict(self) -> dict:
-        """序列化为字典"""
+        """序列化为字典 / Serialize to dict"""
         return {
             "value": self.value,
             "row": self.row,
@@ -49,7 +49,7 @@ class Tile:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Tile":
-        """从字典反序列化"""
+        """从字典反序列化 / Deserialize from dict"""
         tile = cls(
             value=data["value"],
             row=data["row"],

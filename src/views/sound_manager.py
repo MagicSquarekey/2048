@@ -9,7 +9,7 @@ from src.models.data_manager import DataManager
 
 
 class SoundManager:
-    """音效管理器 - 单例模式"""
+    """音效管理器 - 单例模式 / Sound manager - singleton pattern"""
 
     _instance: Optional["SoundManager"] = None
 
@@ -30,7 +30,7 @@ class SoundManager:
         self._generate_sounds()
 
     def _init_mixer(self) -> None:
-        """初始化音频混音器"""
+        """初始化音频混音器 / Initialize audio mixer"""
         try:
             pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
             pygame.mixer.set_num_channels(8)
@@ -39,7 +39,7 @@ class SoundManager:
 
     def _generate_tone(self, freq: float, duration: float, volume: float = 0.3,
                         fade_out: float = 0.05) -> pygame.mixer.Sound:
-        """生成简单音调"""
+        """生成简单音调 / Generate simple tone"""
         sample_rate = 44100
         num_samples = int(sample_rate * duration)
         t = np.linspace(0, duration, num_samples, dtype=np.float32)
@@ -57,7 +57,7 @@ class SoundManager:
         return pygame.mixer.Sound(buffer=sound_array.tobytes())
 
     def _generate_sounds(self) -> None:
-        """生成占位音效"""
+        """生成占位音效 / Generate placeholder sound effects"""
         try:
             # 移动音效 - 短促低音
             self._sounds["move"] = self._generate_tone(220, 0.08, 0.2)
@@ -81,7 +81,7 @@ class SoundManager:
                 self._sounds[name] = None
 
     def play(self, name: str) -> None:
-        """播放音效"""
+        """播放音效 / Play sound effect"""
         settings = self._dm.get_settings()
         if not settings.get("sound_enabled", True):
             return
@@ -94,8 +94,12 @@ class SoundManager:
             except Exception:
                 pass
 
+    def play_sfx(self, name: str) -> None:
+        """播放音效（兼容接口）/ Play sound effect (compatibility interface)"""
+        self.play(name)
+
     def play_music(self, filename: Optional[str] = None) -> None:
-        """播放背景音乐（占位实现）"""
+        """播放背景音乐（占位实现）/ Play background music (placeholder)"""
         settings = self._dm.get_settings()
         if not settings.get("music_enabled", True):
             return
@@ -103,7 +107,7 @@ class SoundManager:
         self._music_playing = True
 
     def stop_music(self) -> None:
-        """停止背景音乐"""
+        """停止背景音乐 / Stop background music"""
         try:
             pygame.mixer.music.stop()
         except Exception:
@@ -111,11 +115,11 @@ class SoundManager:
         self._music_playing = False
 
     def set_sound_volume(self, volume: float) -> None:
-        """设置音效音量"""
+        """设置音效音量 / Set sound volume"""
         self._dm.update_settings(sound_volume=volume)
 
     def set_music_volume(self, volume: float) -> None:
-        """设置音乐音量"""
+        """设置音乐音量 / Set music volume"""
         self._dm.update_settings(music_volume=volume)
         try:
             pygame.mixer.music.set_volume(volume)
@@ -123,14 +127,14 @@ class SoundManager:
             pass
 
     def pause_music(self) -> None:
-        """暂停音乐"""
+        """暂停音乐 / Pause music"""
         try:
             pygame.mixer.music.pause()
         except Exception:
             pass
 
     def resume_music(self) -> None:
-        """恢复音乐"""
+        """恢复音乐 / Resume music"""
         try:
             pygame.mixer.music.unpause()
         except Exception:
@@ -138,5 +142,5 @@ class SoundManager:
 
 
 def get_sound_manager() -> SoundManager:
-    """获取音效管理器单例"""
+    """获取音效管理器单例 / Get sound manager singleton"""
     return SoundManager()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: 设置页面
+# @Function: 设置页面 / Settings page
 
 import pygame
 from typing import Optional, Any
@@ -14,51 +14,56 @@ from src.config import (
     COLOR_BTN_DANGER, COLOR_BTN_DANGER_HOVER,
 )
 from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
+from src.i18n import t, set_language, get_language
 
 
 class ToggleButton(Button):
-    """开关按钮"""
+    """开关按钮 / Toggle button"""
 
     def __init__(self, x: int, y: int, width: int, height: int,
                  text: str, is_on: bool = True, **kwargs) -> None:
         super().__init__(x, y, width, height, text, **kwargs)
         self.is_on = is_on
+        self._base_text = text
         self._update_colors()
 
     def _update_colors(self) -> None:
-        """根据开关状态更新颜色"""
+        """根据开关状态更新颜色 / Update colors based on toggle state"""
+        label = self._base_text.split(":")[0] if ":" in self._base_text else self._base_text
+        on_label = t("on")
+        off_label = t("off")
         if self.is_on:
             self.color = (76, 175, 80)
             self.hover_color = (102, 187, 106)
-            self.text = self.text.split(":")[0] + ": 开"
+            self.text = f"{label}: {on_label}"
         else:
             self.color = (158, 158, 158)
             self.hover_color = (189, 189, 189)
-            self.text = self.text.split(":")[0] + ": 关"
+            self.text = f"{label}: {off_label}"
 
     def toggle(self) -> None:
-        """切换开关状态"""
+        """切换开关状态 / Toggle state"""
         self.is_on = not self.is_on
         self._update_colors()
 
 
 class SettingsPage(Page):
-    """设置页面"""
+    """设置页面 / Settings page"""
 
     def __init__(self) -> None:
         super().__init__("settings")
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """初始化 UI"""
+        """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
 
         # 标题
-        self.title_label = Label(cx, 40, "设置", font_size=36, color=(119, 110, 101),
+        self.title_label = Label(cx, 40, t("settings"), font_size=36, color=(119, 110, 101),
                                 bold=True, centered=True)
 
         # 设置面板
-        panel_w, panel_h = 400, 400
+        panel_w, panel_h = 400, 460
         panel_x = cx - panel_w // 2
         panel_y = 100
         self.panel = Panel(panel_x, panel_y, panel_w, panel_h, (255, 255, 255), radius=16)
@@ -68,89 +73,124 @@ class SettingsPage(Page):
         row_y = panel_y + 30
         row_gap = 55
 
+        sound_label = f"{t('sound')}: {t('on')}"
         self.btn_sound = ToggleButton(
             cx - btn_w // 2, row_y, btn_w, btn_h,
-            "音效: 开", font_size=20,
+            sound_label, font_size=20,
             color=(76, 175, 80), hover_color=(102, 187, 106),
             callback=self._on_toggle_sound,
         )
-
+        music_label = f"{t('music')}: {t('on')}"
         self.btn_music = ToggleButton(
             cx - btn_w // 2, row_y + row_gap, btn_w, btn_h,
-            "音乐: 开", font_size=20,
+            music_label, font_size=20,
             color=(76, 175, 80), hover_color=(102, 187, 106),
             callback=self._on_toggle_music,
         )
 
+        # 语言切换
+        # 语言切换
+        lang = get_language()
+        lang_label = t("language")
+        lang_text = lang_label + ": " + lang.upper()
+        self.btn_lang = Button(
+            cx - btn_w // 2, row_y + row_gap * 2, btn_w, btn_h,
+            lang_text, font_size=20,
+            color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            callback=self._on_toggle_lang,
+        )
+
+
+
         # 重置数据
         self.btn_reset = Button(
-            cx - btn_w // 2, row_y + row_gap * 2, btn_w, btn_h,
-            "重置游戏数据", font_size=20,
+            cx - btn_w // 2, row_y + row_gap * 3, btn_w, btn_h,
+            t("reset_data"), font_size=20,
             color=COLOR_BTN_DANGER, hover_color=COLOR_BTN_DANGER_HOVER,
             callback=self._on_reset,
         )
 
         # 返回按钮
         self.btn_back = Button(
-            cx - btn_w // 2, row_y + row_gap * 3 + 20, btn_w, btn_h,
-            "返回主菜单", font_size=20,
+            cx - btn_w // 2, row_y + row_gap * 4 + 20, btn_w, btn_h,
+            t("back_to_menu"), font_size=20,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_back,
         )
 
-        self.buttons = [self.btn_sound, self.btn_music, self.btn_reset, self.btn_back]
+        self.buttons = [self.btn_sound, self.btn_music, self.btn_lang, self.btn_reset, self.btn_back]
         self._target_page = None
         self._show_confirm = False
 
     def _on_toggle_sound(self) -> None:
-        """切换音效"""
+        """切换音效 / Toggle sound"""
         self.btn_sound.toggle()
         dm = DataManager()
         dm.update_setting("sound_enabled", self.btn_sound.is_on)
 
     def _on_toggle_music(self) -> None:
-        """切换音乐"""
+        """切换音乐 / Toggle music"""
         self.btn_music.toggle()
         dm = DataManager()
         dm.update_setting("music_enabled", self.btn_music.is_on)
 
+    def _on_toggle_lang(self) -> None:
+        """切换语言 / Toggle language"""
+        current = get_language()
+        new_lang = "en" if current == "zh" else "zh"
+        set_language(new_lang)
+        # 更新按钮文本
+        on_label = t("on")
+        off_label = t("off")
+        lang_label = t("language")
+        self.btn_lang.text = f"{lang_label}: {new_lang.upper()}"
+        # 刷新所有开关按钮的文本
+        self.btn_sound._update_colors()
+        self.btn_music._update_colors()
+        # 刷新标题
+        self.title_label.text = t("settings")
+
     def _on_reset(self) -> None:
-        """重置数据"""
+        """重置数据 / Reset data"""
         self._show_confirm = True
 
     def _on_confirm_reset(self) -> None:
-        """确认重置"""
+        """确认重置 / Confirm reset"""
         dm = DataManager()
         dm.reset_data()
         self._show_confirm = False
         self._load_settings()
 
     def _on_cancel_reset(self) -> None:
-        """取消重置"""
+        """取消重置 / Cancel reset"""
         self._show_confirm = False
 
     def _on_back(self) -> None:
-        """返回"""
+        """返回 / Go back"""
         self._target_page = "menu"
 
     def _load_settings(self) -> None:
-        """加载设置"""
+        """加载设置 / Load settings"""
         dm = DataManager()
         settings = dm.get_settings()
         self.btn_sound.is_on = settings.get("sound_enabled", True)
         self.btn_sound._update_colors()
         self.btn_music.is_on = settings.get("music_enabled", True)
         self.btn_music._update_colors()
+        # 更新语言按钮文本
+        lang = get_language()
+        lang_label = t("language")
+        self.btn_lang.text = f"{lang_label}: {lang.upper()}"
 
     def on_enter(self, **kwargs: Any) -> None:
-        """进入页面"""
+        """进入页面 / Enter page"""
         super().on_enter(**kwargs)
         self._target_page = None
         self._show_confirm = False
         self._load_settings()
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
-        """处理事件"""
+        """处理事件 / Handle event"""
         if self._show_confirm:
             # 确认对话框中只处理确认/取消按钮
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -162,7 +202,7 @@ class SettingsPage(Page):
         return None
 
     def update(self, dt: float) -> Optional[str]:
-        """更新"""
+        """更新 / Update"""
         for btn in self.buttons:
             btn.update(dt)
         if self._target_page:
@@ -172,7 +212,7 @@ class SettingsPage(Page):
         return None
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制设置页面"""
+        """绘制设置页面 / Draw settings page"""
         surface.fill(COLOR_BG)
 
         # 标题
@@ -216,7 +256,7 @@ class SettingsPage(Page):
 
             cancel_rect = pygame.Rect(WINDOW_WIDTH // 2 + 10, btn_y, btn_w, btn_h)
             draw_rounded_rect(surface, (158, 158, 158), cancel_rect, 8)
-            draw_text_centered(surface, "取消", font_sm, (255, 255, 255),
+            draw_text_centered(surface, t("cancel"), font_sm, (255, 255, 255),
                              cancel_rect.center)
 
             # 处理确认/取消点击

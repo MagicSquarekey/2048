@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: 登录页面 - 云端同步预留
+# @Function: 登录页面 - 云端同步预留 / Login page - cloud sync placeholder
 
 import pygame
 from typing import Optional, Any
@@ -16,14 +16,14 @@ from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
 
 
 class LoginPage(Page):
-    """登录页面 - 云端同步预留"""
+    """登录页面 - 云端同步预留 / Login page - cloud sync placeholder"""
 
     def __init__(self) -> None:
         super().__init__("login")
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """初始化 UI"""
+        """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
         cy = WINDOW_HEIGHT // 2
         btn_w, btn_h = 220, 50
@@ -70,7 +70,7 @@ class LoginPage(Page):
         self._message = ""
 
     def _on_login(self) -> None:
-        """登录按钮回调（占位）"""
+        """登录按钮回调（占位）/ Login button callback (placeholder)"""
         if not self.username or not self.password:
             self._message = "请输入用户名和密码"
             return
@@ -79,12 +79,12 @@ class LoginPage(Page):
         get_sound_manager().play("click")
 
     def _set_result(self, result: str) -> None:
-        """设置操作结果"""
+        """设置操作结果 / Set operation result"""
         self._result = result
         get_sound_manager().play("click")
 
     def on_enter(self, **kwargs: Any) -> None:
-        """进入页面"""
+        """进入页面 / Enter page"""
         super().on_enter(**kwargs)
         self._result = None
         self._message = ""
@@ -94,7 +94,7 @@ class LoginPage(Page):
         self.password_active = False
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
-        """处理事件"""
+        """处理事件 / Handle event"""
         if event.type == pygame.MOUSEBUTTONDOWN:
             # 点击输入框激活
             self.username_active = self.username_box.collidepoint(event.pos)
@@ -130,7 +130,7 @@ class LoginPage(Page):
     def _draw_input_box(self, surface: pygame.Surface, rect: pygame.Rect,
                         text: str, placeholder: str, is_password: bool,
                         is_active: bool) -> None:
-        """绘制输入框"""
+        """绘制输入框 / Draw input box"""
         # 背景
         bg_color = (255, 255, 255) if is_active else (240, 238, 230)
         draw_rounded_rect(surface, bg_color, rect, 8)
@@ -156,7 +156,7 @@ class LoginPage(Page):
         surface.set_clip(None)
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制登录页面"""
+        """绘制登录页面 / Draw login page"""
         # 半透明遮罩
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
         overlay.fill((250, 248, 239, 240))
