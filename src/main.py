@@ -8,6 +8,23 @@ import os
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
+# 隐藏控制台窗口（Windows平台）
+def hide_console_window():
+    """隐藏控制台窗口 / Hide console window on Windows"""
+    if sys.platform == 'win32':
+        try:
+            import ctypes
+            console_window = ctypes.windll.kernel32.GetConsoleWindow()
+            if console_window:
+                # SW_HIDE = 0
+                ctypes.windll.user32.ShowWindow(console_window, 0)
+        except Exception:
+            # 如果获取控制台窗口失败，静默处理
+            pass
+
+# 在程序启动时立即隐藏控制台
+hide_console_window()
+
 import pygame
 from src.config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, COLOR_BG
 from src.views.pages import (

@@ -13,10 +13,13 @@
       "file": ".claude/skills/dep-check.md"
     },
     {
-      "name": "temp-script",
-      "description": "运行临时测试脚本并在完成后自动删除",
-      "triggers": ["运行临时脚本", "测试脚本", "临时测试"],
-      "file": ".claude/skills/temp-script.md"
+      "name": "temp-files-management",
+      "description": "统一管理临时文件：禁止创建临时文档，允许临时脚本但需及时清理",
+      "triggers": [
+        "运行临时脚本", "测试脚本", "临时测试", "整理项目", "总结操作", 
+        "生成报告", "创建总结", "删除总结", "_check", "_fix", "_patch"
+      ],
+      "file": ".claude/skills/temp-files-management.md"
     },
     {
       "name": "human-escalation",
