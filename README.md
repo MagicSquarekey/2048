@@ -1,155 +1,172 @@
-# 2048 休闲游戏
+# 2048 休闲游戏 / 2048 Casual Game
 
 一个经典的 2048 数字合成游戏，使用 Python + Pygame 开发，运行于 Windows 桌面。
 
-## 游戏特性
+A classic 2048 number merging game developed with Python + Pygame, running on Windows desktop.
 
-### 核心玩法
+---
+
+## 🎮 游戏特性 / Game Features
+
+### 核心玩法 / Core Gameplay
 - **经典模式**: 无限时间，自由游玩
 - **挑战模式**: 限定步数内合成目标方块
 - **计时模式**: 在时间限制内尽可能合成大方块
 
-### 道具系统
+- **Classic Mode**: Unlimited time, free play
+- **Challenge Mode**: Merge target tiles within limited steps
+- **Time Mode**: Merge as many tiles as possible within time limit
+
+### 道具系统 / Power-ups System
 - **撤销**: 撤回上一步操作
 - **清除**: 移除棋盘上随机一个方块
 - **复活**: 游戏结束后可使用道具继续
 
-### 社交功能
+- **Undo**: Reverse the last move
+- **Clear**: Remove a random tile from the board
+- **Revive**: Continue playing after game over using power-ups
+
+### 社交功能 / Social Features
 - **排行榜**: 记录历史最佳成绩
 - **成就系统**: 解锁各种游戏成就
 - **分享功能**: 分享游戏成绩
 
-### 音效设置
+- **Leaderboard**: Record historical best scores
+- **Achievement System**: Unlock various game achievements
+- **Share Function**: Share game scores
+
+### 音效设置 / Audio Settings
 - 可开关游戏音效
 - 可开关背景音乐
 
-## 运行环境
+- Toggle game sound effects
+- Toggle background music
+
+---
+
+## 🖥️ 运行环境 / System Requirements
 
 - Windows 10/11
 - Python 3.10+
 - Pygame 2.6+
 
-## 快速开始
+---
 
-### 1. 安装依赖
+## 🚀 快速开始 / Quick Start
+
+### 1. 安装依赖 / Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 运行游戏
+### 2. 运行游戏 / Run the Game
 
 ```bash
 python src/main.py
 ```
 
-### 3. 打包为 EXE（推荐）
+### 3. 打包为 EXE（推荐）/ Package as EXE (Recommended)
 
 ```bash
-# 方法一：一键打包（推荐）
+# 方法一：一键打包（推荐）/ Method 1: One-click packaging (Recommended)
 python scripts/build_auto.py
 
-# 方法二：交互式打包
+# 方法二：交互式打包 / Method 2: Interactive packaging
 python scripts/build.py
 ```
 
-打包完成后，可执行文件位于 `dist/2048/2048.exe`，用户双击即可运行游戏，无需安装Python或任何依赖。
+打包完成后，可执行文件位于 `dist/2048/2048.exe`，用户双击即可运行游戏，无需安装 Python 或任何依赖。
+
+After packaging, the executable file is located at `dist/2048/2048.exe`. Users can double-click to run the game without installing Python or any dependencies.
 
 详细打包说明请查看 [scripts/README.md](scripts/README.md)
 
-## 项目结构
+For detailed packaging instructions, see [scripts/README.md](scripts/README.md)
+
+---
+
+## 📁 项目结构 / Project Structure
 
 ```
 2048/
-├── src/                    # 源代码
-│   ├── main.py             # 入口文件
-│   ├── config.py           # 全局配置
-│   ├── utils.py            # 工具函数
-│   ├── models/             # 数据模型
-│   ├── views/              # 视图层
-│   └── assets/             # 资源文件
-├── tests/                  # 测试文件
-├── scripts/                # 构建脚本
-├── docs/                   # 文档
-├── private/                # 私有文件
-├── dist/                   # 打包输出（.gitignore）
-├── build/                  # 构建临时文件（.gitignore）
-├── .gitignore              # Git配置
-├── README.md               # 项目说明
-├── requirements.txt        # 依赖列表
-└── CLAUDE.md               # AI协作说明
+├── src/                    # 源代码 / Source code
+│   ├── main.py             # 入口文件 / Entry point
+│   ├── config.py           # 全局配置 / Global configuration
+│   ├── utils.py            # 工具函数 / Utility functions
+│   ├── models/             # 数据模型 / Data models
+│   ├── views/              # 视图层 / View layer
+│   └── assets/             # 资源文件 / Asset files
+├── tests/                  # 测试文件 / Test files
+├── scripts/                # 构建脚本 / Build scripts
+├── docs/                   # 文档 / Documentation
+├── private/                # 私有文件 / Private files
+├── dist/                   # 打包输出（.gitignore）/ Package output (.gitignore)
+├── build/                  # 构建临时文件（.gitignore）/ Build temporary files (.gitignore)
+├── .gitignore              # Git配置 / Git configuration
+├── README.md               # 项目说明 / Project description
+├── requirements.txt        # 依赖列表 / Dependency list
+└── CLAUDE.md               # AI协作说明 / AI collaboration guide
 ```
 
-## 开发指南
+---
 
-### 运行测试
+## 🔧 开发指南 / Development Guide
+
+### 运行测试 / Run Tests
+
 ```bash
-# 运行所有测试
+# 运行所有测试 / Run all tests
 python -m pytest tests/
 
-# 运行特定测试
+# 运行特定测试 / Run specific tests
 python -m pytest tests/test_board.py
 ```
 
-### 代码规范
-- 文件命名：全小写 + 下划线
-- 类名：大驼峰（MyClass）
-- 函数名：小写下划线（my_function）
-- 缩进：4个空格
+### 代码规范 / Code Standards
 
-### Git提交
-```bash
-# 查看状态
-git status
+- **文件命名**: 全小写 + 下划线 (File naming: lowercase with underscores)
+- **函数命名**: 小写下划线 (Function naming: lowercase with underscores)
+- **类名**: 大驼峰 (Class names: PascalCase)
+- **缩进**: 4 个空格 (Indentation: 4 spaces)
+- **行宽**: 最大 120 字符 (Line width: max 120 characters)
 
-# 添加文件
-git add src/
+### Git 提交规范 / Git Commit Convention
 
-# 提交
-git commit -m "feat: 添加新功能"
+```
+<type>(<scope>): <subject>
 ```
 
-## 分发指南
-
-### 打包结果
-打包后生成 `dist/2048/` 文件夹，包含：
-- `2048.exe` - 游戏主程序（约6MB）
-- `_internal/` - 依赖文件
-
-### 分发方式
-1. **直接分发**：将 `dist/2048/` 文件夹压缩为ZIP发送
-2. **U盘分发**：将文件夹复制到U盘
-3. **网盘分发**：上传到网盘供下载
-
-### 系统要求
-- Windows 7/8/10/11
-- 无需安装Python
-- 任何现代电脑都能运行
-
-## 常见问题
-
-### Q: 游戏无法运行？
-A: 检查以下几点：
-1. 确保 `2048.exe` 和 `_internal/` 在同一文件夹
-2. 不要分离文件
-3. 尝试以管理员身份运行
-
-### Q: 如何更新游戏？
-A: 只需替换新的 `dist/2048/` 文件夹即可
-
-### Q: 能否在Mac/Linux上运行？
-A: 当前版本仅支持Windows，需要重新打包
-
-## 技术支持
-
-如遇到问题，请：
-1. 查看 [scripts/README.md](scripts/README.md) 打包说明
-2. 查看 `docs/` 目录下的文档
-3. 联系开发者
-
-## 许可证
-
-MIT License
+| 类型 (Type) | 说明 (Description) | 示例 (Example) |
+|-------------|-------------------|----------------|
+| feat | 新功能 (New feature) | `feat(auth): 添加登录功能` |
+| fix | Bug 修复 (Bug fix) | `fix(api): 修复超时问题` |
+| docs | 文档更新 (Documentation) | `docs: 更新 README` |
+| style | 代码格式 (Code style) | `style: 统一缩进` |
+| refactor | 重构 (Refactoring) | `refactor(core): 提取基类` |
+| test | 测试相关 (Testing) | `test: 添加登录测试` |
+| chore | 构建/工具 (Build/tools) | `chore: 更新依赖` |
 
 ---
-*最后更新：2026-06-22*
+
+## 📜 许可证 / License
+
+MIT License - 详见 [LICENSE](LICENSE) 文件
+
+MIT License - See [LICENSE](LICENSE) file for details
+
+---
+
+## 🤝 贡献 / Contributing
+
+欢迎提交 Issue 和 Pull Request！
+
+Issues and Pull Requests are welcome!
+
+---
+
+## 📞 联系方式 / Contact
+
+如有问题，请通过 GitHub Issues 联系。
+
+For any questions, please contact via GitHub Issues.
