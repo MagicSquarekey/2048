@@ -13,7 +13,7 @@ from src.config import (
     COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
     COLOR_BTN_PRIMARY, COLOR_BTN_PRIMARY_HOVER,
     COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
-    FONT_SIZE_LARGE_TITLE, FONT_SIZE_SUBHEAD, FONT_SIZE_BODY,
+    FONT_SIZE_LARGE_TITLE, FONT_SIZE_SUBHEAD, FONT_SIZE_BODY, FONT_SIZE_FOOTNOTE,
 )
 from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
 from src.i18n import t
@@ -32,22 +32,22 @@ class MenuPage(Page):
 
         # 标题 (iOS Large Title: 34pt)
         self.title_label = Label(
-            cx, 60, "2048",
+            cx, 50, "2048",
             font_size=FONT_SIZE_LARGE_TITLE, color=COLOR_TEXT, bold=True, centered=True,
         )
 
         # 副标题 (iOS Subhead: 15pt)
         self.subtitle_label = Label(
-            cx, 110, "挑战你的数字极限",
+            cx, 100, "挑战你的数字极限",
             font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_SECONDARY, bold=False, centered=True,
         )
 
-        # 分数显示区 (y=155, 高 70 → 底部 225)
-        box_w, box_h = 140, 70
-        gap = 24  # 8pt网格: 8×3=24
+        # 分数显示区
+        box_w, box_h = 120, 60
+        gap = 20
         total_w = box_w * 3 + gap * 2
         start_x = cx - total_w // 2
-        y = 155
+        y = 140
 
         self.score_box = ScoreBox(
             start_x, y, box_w, box_h, t("current_score"), 0,
@@ -62,10 +62,10 @@ class MenuPage(Page):
             title_color=COLOR_TEXT_TERTIARY
         )
 
-        # 按钮 (iOS 风格: 宽按钮 260, 间距 56, 字号 17)
-        btn_w, btn_h = 260, 48  # 8pt网格: 8×6=48
-        btn_y_start = 220
-        btn_gap = 56
+        # 主要按钮 - 三个蓝色按钮
+        btn_w, btn_h = 280, 50
+        btn_y_start = 230
+        btn_gap = 60  # 增大间距
 
         self.btn_classic = Button(
             cx - btn_w // 2, btn_y_start, btn_w, btn_h,
@@ -88,17 +88,24 @@ class MenuPage(Page):
             callback=lambda: self._on_btn_click("challenge"),
         )
 
+        # 次要按钮 - 两个灰色按钮，更小更轻
+        btn_sm_w, btn_sm_h = 180, 42
+        btn_sm_gap = 20
+        btn_sm_y = btn_y_start + btn_gap * 3 + 20
+
         self.btn_settings = Button(
-            cx - btn_w // 2, btn_y_start + btn_gap * 3, btn_w, btn_h,
-            t("settings"), font_size=FONT_SIZE_BODY,
+            cx - btn_sm_w - btn_sm_gap // 2, btn_sm_y, btn_sm_w, btn_sm_h,
+            t("settings"), font_size=FONT_SIZE_FOOTNOTE,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            text_color=COLOR_TEXT_SECONDARY,
             callback=lambda: self._on_btn_click("settings"),
         )
 
         self.btn_achievements = Button(
-            cx - btn_w // 2, btn_y_start + btn_gap * 4, btn_w, btn_h,
-            t("achievements"), font_size=FONT_SIZE_BODY,
+            cx + btn_sm_gap // 2, btn_sm_y, btn_sm_w, btn_sm_h,
+            t("achievements"), font_size=FONT_SIZE_FOOTNOTE,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            text_color=COLOR_TEXT_SECONDARY,
             callback=lambda: self._on_btn_click("achievements"),
         )
 

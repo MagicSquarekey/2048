@@ -115,14 +115,14 @@ MODE_CONFIG = {
 }
 
 # ========== 动画配置（iOS 弹簧动画） ==========
-ANIMATION_MOVE_DURATION = 250       # 移动动画（ms）- iOS 弹簧更慢
-ANIMATION_MERGE_DURATION = 280      # 合并动画（ms）
-ANIMATION_SPAWN_DURATION = 200      # 生成动画（ms）
-ANIMATION_FADE_DURATION = 350       # 淡入淡出（ms）
+ANIMATION_MOVE_DURATION = 150       # 移动动画（ms）- 保持快速响应
+ANIMATION_MERGE_DURATION = 200      # 合并动画（ms）
+ANIMATION_SPAWN_DURATION = 150      # 生成动画（ms）
+ANIMATION_FADE_DURATION = 300       # 淡入淡出（ms）
 
-# 弹簧动画参数
-SPRING_DAMPING = 0.75
-SPRING_FREQUENCY = 2.5
+# 弹簧动画参数 - 优化为更平滑
+SPRING_DAMPING = 0.85              # 增加阻尼，减少弹跳
+SPRING_FREQUENCY = 1.8             # 降低频率，更自然
 
 # ========== 字号配置（iOS 8pt 网格） ==========
 def _find_chinese_font() -> str:

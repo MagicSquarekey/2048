@@ -183,19 +183,24 @@ def get_tile_color(value: int):
 
 # ========== iOS 弹簧动画曲线 ==========
 
-def ease_out_spring(t: float, damping: float = 0.75, frequency: float = 2.5) -> float:
+def ease_out_spring(t: float, damping: float = 0.85, frequency: float = 1.8) -> float:
     """
-    iOS 风格弹簧动画曲线
+    iOS 风格弹簧动画曲线（优化版）
 
     Args:
         t: 动画进度 (0.0 ~ 1.0)
-        damping: 阻尼系数 (越小弹跳越明显, iOS 默认约 0.7-0.8)
-        frequency: 弹簧频率 (越大振动越快)
+        damping: 阻尼系数 (越大越平滑, 0.85为优化值)
+        frequency: 弹簧频率 (越小越自然, 1.8为优化值)
 
     Returns:
-        插值结果 (可能超过 1.0，实现弹性回弹效果)
+        插值结果 (0.0 ~ 1.0，轻微回弹)
     """
-    return 1 - math.exp(-damping * 10 * t) * math.cos(frequency * 2 * math.pi * t)
+    if t <= 0:
+        return 0.0
+    if t >= 1:
+        return 1.0
+    # 优化的弹簧曲线，减少过度弹跳
+    return 1 - math.exp(-damping * 8 * t) * math.cos(frequency * 2 * math.pi * t)
 
 
 def draw_shadow(
