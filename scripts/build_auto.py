@@ -26,7 +26,8 @@ def main() -> None:
     # 运行PyInstaller
     print("开始打包...")
     cmd = [
-        sys.executable, '-m', 'PyInstaller', '--clean',
+        sys.executable, '-m', 'PyInstaller', '--clean', '--onefile',
+        '--console',
         '--distpath', 'dist',
         '--workpath', 'build',
         '--specpath', 'scripts',
@@ -40,8 +41,8 @@ def main() -> None:
         if result.returncode == 0:
             print("[OK] 打包成功!")
             
-            # 检查生成的文件
-            exe_path = os.path.join("dist", "2048", "2048.exe")
+            # 检查生成的文件 (--onefile 模式直接生成在 dist/ 下)
+            exe_path = os.path.join("dist", "2048.exe")
             if os.path.exists(exe_path):
                 print(f"[FILE] 可执行文件: {os.path.abspath(exe_path)}")
                 
@@ -67,7 +68,7 @@ timeout /t 3 >nul
                 print("[DONE] 打包完成!")
                 print("=" * 50)
                 print("[DISTRIBUTE] 分发方式:")
-                print(f"  1. 将整个文件夹复制给用户: {os.path.abspath(os.path.join('dist', '2048'))}")
+                print(f"  1. 直接发送 exe 文件给用户: {os.path.abspath(exe_path)}")
                 print("  2. 用户双击 2048.exe 即可运行")
                 print("  3. 无需安装任何依赖")
                 print("\n[QUICK START] 快速启动:")

@@ -8,9 +8,12 @@ from src.views.pages.base_page import Page
 from src.views.ui_components import Button, Label, Panel
 from src.views.sound_manager import get_sound_manager
 from src.config import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT, COLOR_TEXT_LIGHT,
+    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT,
+    COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
     COLOR_BTN_PRIMARY, COLOR_BTN_PRIMARY_HOVER,
     COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
+    COLOR_BTN_DANGER, COLOR_TILE_EMPTY, COLOR_BOARD_BG,
+    FONT_SIZE_TITLE1, FONT_SIZE_SUBHEAD, FONT_SIZE_BODY,
 )
 from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
 
@@ -26,22 +29,22 @@ class LoginPage(Page):
         """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
         cy = WINDOW_HEIGHT // 2
-        btn_w, btn_h = 220, 50
+        btn_w, btn_h = 260, 48  # iOS 宽按钮, 8pt网格: 8×6=48
 
-        # 标题
+        # 标题 (iOS Title 1: 28pt)
         self.title = Label(
             cx, cy - 120, "用户登录",
-            font_size=48, color=COLOR_TEXT, bold=True, centered=True,
+            font_size=FONT_SIZE_TITLE1, color=COLOR_TEXT, bold=True, centered=True,
         )
 
-        # 说明文字
+        # 说明文字 (iOS Subhead: 15pt)
         self.desc = Label(
             cx, cy - 55, "登录后可云端同步游戏进度",
-            font_size=20, color=(150, 140, 130), centered=True,
+            font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_TERTIARY, centered=True,
         )
 
-        # 用户名输入框（占位）
-        box_w, box_h = 260, 45
+        # 用户名输入框（占位）(iOS 标准高度 44)
+        box_w, box_h = 260, 44
         box_x = cx - box_w // 2
         self.username_box = pygame.Rect(box_x, cy - 20, box_w, box_h)
         self.username = ""
@@ -52,9 +55,10 @@ class LoginPage(Page):
         self.password = ""
         self.password_active = False
 
-        # 登录按钮
+        # 登录按钮 (iOS Body: 17pt)
         self.btn_login = Button(
             cx - btn_w // 2, cy + 100, btn_w, btn_h, "登录",
+            font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
             callback=self._on_login,
         )
@@ -62,6 +66,7 @@ class LoginPage(Page):
         # 返回按钮
         self.btn_back = Button(
             cx - btn_w // 2, cy + 165, btn_w, btn_h, "返回",
+            font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=lambda: self._set_result("menu"),
         )
@@ -130,14 +135,14 @@ class LoginPage(Page):
     def _draw_input_box(self, surface: pygame.Surface, rect: pygame.Rect,
                         text: str, placeholder: str, is_password: bool,
                         is_active: bool) -> None:
-        """绘制输入框 / Draw input box"""
-        # 背景
-        bg_color = (255, 255, 255) if is_active else (240, 238, 230)
-        draw_rounded_rect(surface, bg_color, rect, 8)
+        """绘制 iOS 风格输入框"""
+        # 背景 (iOS 风格: 激活时白色, 未激活时浅灰)
+        bg_color = (255, 255, 255) if is_active else COLOR_TILE_EMPTY
+        draw_rounded_rect(surface, bg_color, rect, 10)  # iOS 圆角
 
-        # 边框
-        border_color = COLOR_BTN_PRIMARY if is_active else (200, 190, 180)
-        pygame.draw.rect(surface, border_color, rect, 2, border_radius=8)
+        # 边框 (iOS 风格: 激活时蓝色, 未激活时浅灰)
+        border_color = COLOR_BTN_PRIMARY if is_active else (230, 230, 235)  # iOS Gray 5
+        pygame.draw.rect(surface, border_color, rect, 1, border_radius=10)  # 1px 边框
 
         # 文字
         font = get_font_manager().get_medium()
@@ -145,7 +150,7 @@ class LoginPage(Page):
         if display_text:
             text_surf = font.render(display_text, True, COLOR_TEXT)
         else:
-            text_surf = font.render(placeholder, True, (180, 170, 160))
+            text_surf = font.render(placeholder, True, COLOR_TEXT_TERTIARY)
 
         # 垂直居中
         text_y = rect.y + (rect.height - text_surf.get_height()) // 2
@@ -156,17 +161,17 @@ class LoginPage(Page):
         surface.set_clip(None)
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制登录页面 / Draw login page"""
-        # 半透明遮罩
+        """绘制 iOS 风格登录页面"""
+        # 半透明遮罩 (iOS Gray 6, alpha=40)
         overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
-        overlay.fill((250, 248, 239, 240))
+        overlay.fill((242, 242, 247, 40))
         surface.blit(overlay, (0, 0))
 
-        # 绘制面板
+        # 绘制面板 (iOS 风格)
         panel_w, panel_h = 400, 380
         panel_x = (WINDOW_WIDTH - panel_w) // 2
         panel_y = (WINDOW_HEIGHT - panel_h) // 2
-        draw_rounded_rect(surface, (255, 255, 255), (panel_x, panel_y, panel_w, panel_h), 16)
+        draw_rounded_rect(surface, COLOR_BOARD_BG, (panel_x, panel_y, panel_w, panel_h), 16)
 
         # 绘制元素
         self.title.draw(surface)
@@ -182,9 +187,9 @@ class LoginPage(Page):
             "密码", True, self.password_active,
         )
 
-        # 提示信息
+        # 提示信息 (iOS 风格)
         if self._message:
-            msg_surf = get_font_manager().get_small().render(self._message, True, (200, 80, 80))
+            msg_surf = get_font_manager().get_small().render(self._message, True, COLOR_BTN_DANGER)
             msg_x = WINDOW_WIDTH // 2 - msg_surf.get_width() // 2
             surface.blit(msg_surf, (msg_x, WINDOW_HEIGHT // 2 + 90))
 

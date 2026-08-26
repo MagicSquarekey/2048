@@ -19,10 +19,9 @@ def hide_console_window():
                 # SW_HIDE = 0
                 ctypes.windll.user32.ShowWindow(console_window, 0)
         except Exception:
-            # 如果获取控制台窗口失败，静默处理
             pass
 
-# 在程序启动时立即隐藏控制台
+# 启动时隐藏控制台
 hide_console_window()
 
 import pygame

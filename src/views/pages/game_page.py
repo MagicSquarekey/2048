@@ -13,8 +13,10 @@ from src.models.data_manager import DataManager
 from src.models.achievements import check_achievements
 from src.config import (
     WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT,
+    COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
     COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
     COLOR_BOARD_BG, SWIPE_THRESHOLD,
+    FONT_SIZE_SUBHEAD, FONT_SIZE_BODY, FONT_SIZE_FOOTNOTE,
 )
 from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager, format_time
 from src.i18n import t
@@ -45,11 +47,13 @@ class GamePage(Page):
         total_w = box_w * 2 + gap
         start_x = cx - total_w // 2
 
-        self.score_box = ScoreBox(start_x, 12, box_w, box_h, t("current_score"), 0)
-        self.best_box = ScoreBox(start_x + box_w + gap, 12, box_w, box_h, t("best_score"), 0)
+        self.score_box = ScoreBox(start_x, 12, box_w, box_h, t("current_score"), 0,
+                                  title_color=COLOR_TEXT_TERTIARY)
+        self.best_box = ScoreBox(start_x + box_w + gap, 12, box_w, box_h, t("best_score"), 0,
+                                  title_color=COLOR_TEXT_TERTIARY)
 
-        # 模式/时间/步数提示
-        self.mode_label = Label(cx, 95, "", font_size=18, color=(120, 110, 100), centered=True)
+        # 模式/时间/步数提示 (iOS Subhead)
+        self.mode_label = Label(cx, 95, "", font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_SECONDARY, centered=True)
 
         # 棋盘视图
         self.board_view = BoardView()
@@ -62,32 +66,32 @@ class GamePage(Page):
 
         self.btn_undo = Button(
             props_start_x, props_y, btn_w, btn_h,
-            t("undo"), font_size=18,
+            t("undo"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_undo,
         )
 
         self.btn_clean = Button(
             props_start_x + btn_w + 15, props_y, btn_w, btn_h,
-            t("clean"), font_size=18,
+            t("clean"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_clean,
         )
 
         self.btn_revive = Button(
             props_start_x + (btn_w + 15) * 2, props_y, btn_w, btn_h,
-            t("revive"), font_size=18,
+            t("revive"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_revive,
         )
 
-        # 道具次数标签
-        self.undo_label = Label(props_start_x + btn_w // 2, props_y + 45, "x2", font_size=14,
-                               color=(150, 140, 130), centered=True)
+        # 道具次数标签 (iOS Caption1)
+        self.undo_label = Label(props_start_x + btn_w // 2, props_y + 45, "x2", font_size=FONT_SIZE_FOOTNOTE,
+                               color=COLOR_TEXT_TERTIARY, centered=True)
         self.clean_label = Label(props_start_x + btn_w + 15 + btn_w // 2, props_y + 45, "x0",
-                                font_size=14, color=(150, 140, 130), centered=True)
+                                font_size=FONT_SIZE_FOOTNOTE, color=COLOR_TEXT_TERTIARY, centered=True)
         self.revive_label = Label(props_start_x + (btn_w + 15) * 2 + btn_w // 2, props_y + 45,
-                                 "广告", font_size=14, color=(150, 140, 130), centered=True)
+                                 "广告", font_size=FONT_SIZE_FOOTNOTE, color=COLOR_TEXT_TERTIARY, centered=True)
 
         self.buttons = [self.btn_back, self.btn_undo, self.btn_clean, self.btn_revive]
 
@@ -289,22 +293,22 @@ class GamePage(Page):
             time_text = format_time(int(self._game_state.time_remaining))
             font = get_font_manager().get_small()
             draw_text_centered(surface, f"剩余时间: {time_text}", font,
-                             (200, 80, 60), (WINDOW_WIDTH // 2, 510))
+                             COLOR_TEXT, (WINDOW_WIDTH // 2, 510))
 
         # 棋盘
         if self._game_state and self._game_state.board:
             self.board_view.draw(surface, self._game_state.board)
 
-        # 游戏结束覆盖层
+        # 游戏结束覆盖层 (iOS 风格: 更浅的遮罩 alpha=40)
         if self._game_state and self._game_state.state == GameState.STATE_GAME_OVER:
             overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 100))
+            overlay.fill((0, 0, 0, 40))
             surface.blit(overlay, (0, 0))
             font = get_font_manager().get_large(bold=True)
-            draw_text_centered(surface, t("game_over"), font, (255, 255, 255),
+            draw_text_centered(surface, t("game_over"), font, COLOR_TEXT,
                              (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 - 20))
             font_sm = get_font_manager().get_small()
-            draw_text_centered(surface, "点击任意按钮继续", font_sm, (200, 200, 200),
+            draw_text_centered(surface, "点击任意按钮继续", font_sm, COLOR_TEXT_SECONDARY,
                              (WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 30))
 
         # 道具栏

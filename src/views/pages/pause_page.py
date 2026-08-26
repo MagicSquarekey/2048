@@ -8,10 +8,11 @@ from src.views.pages.base_page import Page
 from src.views.ui_components import Button, Label
 from src.views.sound_manager import get_sound_manager
 from src.config import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT, COLOR_TEXT_LIGHT,
+    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT,
     COLOR_BTN_PRIMARY, COLOR_BTN_PRIMARY_HOVER,
     COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
-    COLOR_OVERLAY,
+    COLOR_OVERLAY, COLOR_BOARD_BG,
+    FONT_SIZE_TITLE1, FONT_SIZE_BODY,
 )
 from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
 
@@ -27,31 +28,35 @@ class PausePage(Page):
         """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
         cy = WINDOW_HEIGHT // 2
-        btn_w, btn_h = 220, 50
+        btn_w, btn_h = 260, 48  # iOS 宽按钮, 8pt网格: 8×6=48
+        btn_gap = 64  # 8pt网格: 8×8=64
 
-        # 标题
+        # 标题 (iOS Title 1: 28pt)
         self.title = Label(
             cx, cy - 100, "游戏暂停",
-            font_size=48, color=COLOR_TEXT, bold=True, centered=True,
+            font_size=FONT_SIZE_TITLE1, color=COLOR_TEXT, bold=True, centered=True,
         )
 
-        # 继续游戏按钮
+        # 继续游戏按钮 (iOS Body: 17pt)
         self.btn_resume = Button(
-            cx - btn_w // 2, cy - 30, btn_w, btn_h, "继续游戏",
+            cx - btn_w // 2, cy - 32, btn_w, btn_h, "继续游戏",
+            font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
             callback=lambda: self._set_result("resume"),
         )
 
         # 重新开始按钮
         self.btn_restart = Button(
-            cx - btn_w // 2, cy + 35, btn_w, btn_h, "重新开始",
+            cx - btn_w // 2, cy - 32 + btn_gap, btn_w, btn_h, "重新开始",
+            font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=lambda: self._set_result("restart"),
         )
 
         # 返回主菜单按钮
         self.btn_menu = Button(
-            cx - btn_w // 2, cy + 100, btn_w, btn_h, "返回主菜单",
+            cx - btn_w // 2, cy - 32 + btn_gap * 2, btn_w, btn_h, "返回主菜单",
+            font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=lambda: self._set_result("menu"),
         )
@@ -91,11 +96,11 @@ class PausePage(Page):
         overlay.fill(COLOR_OVERLAY)
         surface.blit(overlay, (0, 0))
 
-        # 绘制暂停面板背景
+        # 绘制暂停面板背景 (iOS 风格)
         panel_w, panel_h = 320, 300
         panel_x = (WINDOW_WIDTH - panel_w) // 2
         panel_y = (WINDOW_HEIGHT - panel_h) // 2
-        draw_rounded_rect(surface, (255, 255, 255), (panel_x, panel_y, panel_w, panel_h), 16)
+        draw_rounded_rect(surface, COLOR_BOARD_BG, (panel_x, panel_y, panel_w, panel_h), 16)
 
         # 绘制元素
         self.title.draw(surface)

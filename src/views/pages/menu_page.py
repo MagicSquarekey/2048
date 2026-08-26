@@ -10,8 +10,10 @@ from src.views.board_view import BoardView
 from src.models.data_manager import DataManager
 from src.config import (
     WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT,
+    COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
     COLOR_BTN_PRIMARY, COLOR_BTN_PRIMARY_HOVER,
     COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
+    FONT_SIZE_LARGE_TITLE, FONT_SIZE_SUBHEAD, FONT_SIZE_BODY,
 )
 from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
 from src.i18n import t
@@ -28,74 +30,74 @@ class MenuPage(Page):
         """初始化 UI 元素 / Initialize UI elements"""
         cx = WINDOW_WIDTH // 2
 
-        # 标题 (font_size=96，文本高度约 100px，中心 y=60 → 顶部≈10，底部≈110)
+        # 标题 (iOS Large Title: 34pt)
         self.title_label = Label(
             cx, 60, "2048",
-            font_size=96, color=(119, 110, 101), bold=True, centered=True,
+            font_size=FONT_SIZE_LARGE_TITLE, color=COLOR_TEXT, bold=True, centered=True,
         )
 
-        # 副标题 (font_size=20，文本高度约 25px，中心 y=130 → 顶部≈118，底部≈142)
+        # 副标题 (iOS Subhead: 15pt)
         self.subtitle_label = Label(
-            cx, 130, "挑战你的数字极限",
-            font_size=20, color=(140, 130, 120), bold=False, centered=True,
+            cx, 110, "挑战你的数字极限",
+            font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_SECONDARY, bold=False, centered=True,
         )
 
         # 分数显示区 (y=155, 高 70 → 底部 225)
         box_w, box_h = 140, 70
-        gap = 20
+        gap = 24  # 8pt网格: 8×3=24
         total_w = box_w * 3 + gap * 2
         start_x = cx - total_w // 2
         y = 155
 
         self.score_box = ScoreBox(
             start_x, y, box_w, box_h, t("current_score"), 0,
-            title_color=(119, 110, 101)
+            title_color=COLOR_TEXT_TERTIARY
         )
         self.best_box = ScoreBox(
             start_x + box_w + gap, y, box_w, box_h, t("best_score"), 0,
-            title_color=(119, 110, 101)
+            title_color=COLOR_TEXT_TERTIARY
         )
         self.games_box = ScoreBox(
             start_x + (box_w + gap) * 2, y, box_w, box_h, t("total_games"), 0,
-            title_color=(119, 110, 101)
+            title_color=COLOR_TEXT_TERTIARY
         )
 
-        # 按钮 (5个按钮, h=52, gap=55: 250→305→360→415→470, 最后底部 522)
-        btn_w, btn_h = 220, 52
-        btn_y_start = 250
-        btn_gap = 55
+        # 按钮 (iOS 风格: 宽按钮 260, 间距 56, 字号 17)
+        btn_w, btn_h = 260, 48  # 8pt网格: 8×6=48
+        btn_y_start = 220
+        btn_gap = 56
 
         self.btn_classic = Button(
             cx - btn_w // 2, btn_y_start, btn_w, btn_h,
-            t("start_game"), font_size=24,
+            t("start_game"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
             callback=lambda: self._on_btn_click("classic"),
         )
 
         self.btn_timed = Button(
             cx - btn_w // 2, btn_y_start + btn_gap, btn_w, btn_h,
-            t("time_challenge"), font_size=24,
+            t("time_challenge"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
             callback=lambda: self._on_btn_click("timed"),
         )
 
         self.btn_challenge = Button(
             cx - btn_w // 2, btn_y_start + btn_gap * 2, btn_w, btn_h,
-            t("challenge_mode"), font_size=24,
+            t("challenge_mode"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
             callback=lambda: self._on_btn_click("challenge"),
         )
 
         self.btn_settings = Button(
             cx - btn_w // 2, btn_y_start + btn_gap * 3, btn_w, btn_h,
-            t("settings"), font_size=24,
+            t("settings"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=lambda: self._on_btn_click("settings"),
         )
 
         self.btn_achievements = Button(
             cx - btn_w // 2, btn_y_start + btn_gap * 4, btn_w, btn_h,
-            t("achievements"), font_size=24,
+            t("achievements"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=lambda: self._on_btn_click("achievements"),
         )
@@ -156,10 +158,10 @@ class MenuPage(Page):
         for btn in self.buttons:
             btn.draw(surface)
 
-        # 底部提示 - 调整颜色和位置避免重叠
+        # 底部提示 (iOS Footnote 风格)
         font = get_font_manager().get_tiny()
         draw_text_centered(
             surface, "用方向键或滑动操作方块",
-            font, (119, 110, 101),
-            (WINDOW_WIDTH // 2, WINDOW_HEIGHT - 15),
+            font, COLOR_TEXT_TERTIARY,
+            (WINDOW_WIDTH // 2, WINDOW_HEIGHT - 16),  # 8pt网格: 8×2=16
         )

@@ -29,7 +29,8 @@ def run_pyinstaller() -> bool:
     try:
         # 使用PyInstaller打包
         cmd = [
-            sys.executable, '-m', 'PyInstaller', '--clean',
+            sys.executable, '-m', 'PyInstaller', '--clean', '--onefile',
+            '--console',
             '--distpath', 'dist',
             '--workpath', 'build',
             '--specpath', 'scripts',

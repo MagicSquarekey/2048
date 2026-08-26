@@ -15,7 +15,7 @@ from src.models.board import GameBoard
 from src.models.tile import Tile
 from src.utils import (
     draw_rounded_rect, draw_text_centered, get_font_manager,
-    ease_out_cubic, ease_out_back, lerp, get_tile_color,
+    ease_out_spring, lerp, get_tile_color,
 )
 
 
@@ -47,9 +47,9 @@ class TileRenderer:
         """
         # 计算位置（支持动画插值）
         if tile.prev_row is not None and tile.prev_col is not None and progress < 1.0:
-            # 移动动画
-            row = lerp(tile.prev_row, tile.row, ease_out_cubic(progress))
-            col = lerp(tile.prev_col, tile.col, ease_out_cubic(progress))
+            # 移动动画 - 使用 iOS 弹簧曲线
+            row = lerp(tile.prev_row, tile.row, ease_out_spring(progress))
+            col = lerp(tile.prev_col, tile.col, ease_out_spring(progress))
         else:
             row = float(tile.row)
             col = float(tile.col)
@@ -72,8 +72,8 @@ class TileRenderer:
         # 获取颜色
         bg_color, text_color = get_tile_color(tile.value)
 
-        # 绘制背景
-        draw_rounded_rect(surface, bg_color, rect, 8)
+        # 绘制背景（iOS 风格圆角）
+        draw_rounded_rect(surface, bg_color, rect, 10)
 
         # 绘制数字
         font_size = TILE_FONT_SIZES.get(tile.value, 28)
@@ -145,7 +145,7 @@ class BoardView:
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
                 rect = TileRenderer.get_tile_rect(row, col)
-                draw_rounded_rect(surface, COLOR_TILE_EMPTY, rect, 8)
+                draw_rounded_rect(surface, COLOR_TILE_EMPTY, rect, 10)
 
         # 绘制方块
         now = time.time()
@@ -156,14 +156,14 @@ class BoardView:
                 elapsed = now - anim["start_time"]
                 progress = min(1.0, elapsed / anim["duration"]) if anim["duration"] > 0 else 1.0
                 if anim["type"] == "merge":
-                    # 合并动画：弹跳效果
-                    scale = ease_out_back(progress)
+                    # 合并动画：iOS 弹簧效果
+                    scale = ease_out_spring(progress)
                     TileRenderer.draw_tile(surface, tile, 1.0, scale)
                 elif anim["type"] == "spawn":
-                    # 生成动画：缩放效果
+                    # 生成动画：iOS 弹簧缩放效果
                     if progress < 0:
                         continue  # 还没开始
-                    scale = ease_out_back(progress)
+                    scale = ease_out_spring(progress)
                     TileRenderer.draw_tile(surface, tile, 1.0, scale)
                 else:
                     # 移动动画

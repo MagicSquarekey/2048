@@ -116,11 +116,11 @@ class SoundManager:
 
     def set_sound_volume(self, volume: float) -> None:
         """设置音效音量 / Set sound volume"""
-        self._dm.update_settings(sound_volume=volume)
+        self._dm.update_setting("sound_volume", volume)
 
     def set_music_volume(self, volume: float) -> None:
         """设置音乐音量 / Set music volume"""
-        self._dm.update_settings(music_volume=volume)
+        self._dm.update_setting("music_volume", volume)
         try:
             pygame.mixer.music.set_volume(volume)
         except Exception:

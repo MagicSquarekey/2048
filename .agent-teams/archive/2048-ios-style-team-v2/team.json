@@ -1,0 +1,283 @@
+{
+  "name": "2048-iOS-Style-Team-v2",
+  "id": "2048-ios-style-team-v2",
+  "description": "继续2048游戏iOS风格改造项目，从Step 4编码执行开始",
+  "captainSessionId": "session-1b6e55b4-52ce-43db-935b-6aec2f28f69c",
+  "createdAt": 1787565558368,
+  "members": [
+    {
+      "id": "1112849d-a0f3-45a9-a9b3-a0f51ae544a1",
+      "name": "开发工程师",
+      "role": "开发工程师",
+      "provider": "xiaomi",
+      "model": "mimo-v2.5",
+      "reasoningEffort": "high",
+      "joinedAt": 1787565566340,
+      "status": "removed"
+    },
+    {
+      "id": "6c46bc4d-3858-45b3-a211-36f5678a986a",
+      "name": "代码审查员",
+      "role": "代码审查员",
+      "provider": "xiaomi",
+      "model": "mimo-v2.5",
+      "reasoningEffort": "high",
+      "joinedAt": 1787565571771,
+      "status": "removed"
+    },
+    {
+      "id": "c9dddc67-5abd-4be0-9474-47b5c203ee25",
+      "name": "架构师",
+      "role": "架构师",
+      "provider": "xiaomi",
+      "model": "mimo-v2.5",
+      "reasoningEffort": "high",
+      "joinedAt": 1787565578488,
+      "status": "removed"
+    },
+    {
+      "id": "4cefd2b2-5a2d-453c-a860-ca360076f3d5",
+      "name": "测试工程师",
+      "role": "测试工程师",
+      "provider": "xiaomi",
+      "model": "mimo-v2.5",
+      "reasoningEffort": "high",
+      "joinedAt": 1787565585024,
+      "status": "removed"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t1",
+      "subject": "T1.1: config.py 颜色与字号系统改造",
+      "description": "清理 config.py 重复定义，替换全部颜色常量为 iOS 系统色，替换字号常量为 iOS 8pt 网格，替换圆角参数为 iOS 令牌。涉及文件：src/config.py。改动量约120行。验收标准：1) 无重复颜色定义；2) 所有 COLOR_* 常量使用 iOS 值；3) TILE_COLORS 包含 11 级配色；4) 字号常量符合 iOS 8pt 网格；5) 圆角参数 4 级令牌；6) Python 语法检查通过。",
+      "status": "completed",
+      "assignee": "开发工程师",
+      "dependencies": [],
+      "attempt": 1,
+      "createdAt": 1787565607887,
+      "updatedAt": 1787565739052,
+      "attemptId": "0543a548-ec75-4362-b04f-eb20979497c0",
+      "reassigning": false,
+      "output": "T1.1: config.py 颜色与字号系统改造已完成。主要改动：1) 清理了重复定义的按钮颜色；2) 替换所有颜色常量为 iOS 系统颜色（iOS Gray 6 背景、纯白棋盘、iOS Blue 按钮等）；3) 替换方块配色方案为 iOS 渐变色系；4) 替换字号为 iOS 8pt 网格（9级字号）；5) 新增圆角令牌（RADIUS_SM/MD/LG/XL）；6) 更新动画参数为 iOS 弹簧动画（250ms移动、280ms合并）；7) 新增弹簧动画参数 SPRING_DAMPING 和 SPRING_FREQUENCY。保留了兼容旧接口的 FONT_SIZE_LARGE/MEDIUM/SMALL/TINY 映射。"
+    },
+    {
+      "id": "t2",
+      "subject": "T1.2: config.py 动画与游戏参数改造",
+      "description": "替换动画时长参数为 iOS 弹簧动画标准，新增弹簧动画参数（damping/frequency），调整棋盘间距参数。涉及文件：src/config.py。改动量约20行。验收标准：1) ANIMATION_MOVE_DURATION=250；2) 新增 SPRING_DAMPING=0.75；3) TILE_GAP=12；4) TILE_SIZE=90。",
+      "status": "completed",
+      "assignee": "开发工程师",
+      "dependencies": [
+        "t1"
+      ],
+      "attempt": 1,
+      "createdAt": 1787565615364,
+      "updatedAt": 1787565793613,
+      "attemptId": "c32677d7-0985-406a-865d-083a2f7bd2a1",
+      "reassigning": false,
+      "output": "T1.2: config.py 动画与游戏参数改造已完成。验收标准全部满足：\n1) ANIMATION_MOVE_DURATION=250 ✅（第104行）\n2) SPRING_DAMPING=0.75 ✅（第110行）\n3) TILE_GAP=12 ✅（第15行）\n4) TILE_SIZE=90 ✅（第14行）\n这些参数已在 T1.1 config.py 颜色与字号系统改造中一并完成，无需额外修改。"
+    },
+    {
+      "id": "t3",
+      "subject": "T1.3: utils.py 新增弹簧动画函数",
+      "description": "新增 iOS 风格弹簧缓动函数 ease_out_spring()，新增柔和阴影绘制函数 draw_shadow()。涉及文件：src/utils.py。改动量约40行。验收标准：1) ease_out_spring(t) 返回值在 t=1 时约等于 1.0；2) draw_shadow() 绘制多层半透明阴影；3) 函数签名包含 damping/frequency 参数。",
+      "status": "completed",
+      "assignee": "开发工程师",
+      "dependencies": [
+        "t1"
+      ],
+      "attempt": 1,
+      "createdAt": 1787565621954,
+      "updatedAt": 1787565866003,
+      "attemptId": "fee8b2a3-c207-4eba-9421-21dfd269d501",
+      "reassigning": false,
+      "output": "T1.3: utils.py 新增弹簧动画函数已完成。新增两个函数：\n1) ease_out_spring(t, damping=0.75, frequency=2.5) - iOS 风格弹簧动画曲线，使用指数衰减和余弦函数实现弹性回弹效果\n2) draw_shadow(surface, rect, color, alpha, offset, blur) - iOS 风格柔和阴影，使用多层半透明矩形模拟高斯模糊效果\n两个函数已添加到 utils.py 文件末尾，可被其他模块导入使用。"
+    },
+    {
+      "id": "t4",
+      "subject": "T1.4: Phase 1 基础验证",
+      "description": "运行 Python 语法检查，验证 config.py 和 utils.py 无导入错误，验证现有测试不被破坏。验收标准：1) `python -c \"from src.config import *\"` 无报错；2) `python -c \"from src.utils import ease_out_spring, draw_shadow\"` 无报错；3) `pytest tests/test_board.py -q` 全部通过。",
+      "status": "completed",
+      "assignee": "测试工程师",
+      "dependencies": [
+        "t1",
+        "t2",
+        "t3"
+      ],
+      "attempt": 1,
+      "createdAt": 1787565638429,
+      "updatedAt": 1787566056936,
+      "reassigning": false,
+      "attemptId": "27c13519-3e8b-464b-af6f-f5a83e0b7913",
+      "output": "Phase 1 基础验证完成。测试结果摘要：\n\n**✅ 通过的测试（共 39 项）：**\n1. iOS颜色系统测试（3项）：背景色、方块配色、UI颜色 — 全部通过\n2. iOS字号系统测试（3项）：标准字号、旧接口兼容性、方块字号映射 — 全部通过\n3. iOS圆角配置测试（1项）：圆角令牌 — 通过\n4. iOS动画配置测试（2项）：动画时长、弹簧参数 — 通过\n5. iOS棋盘配置测试（2项）：棋盘尺寸、位置计算 — 通过\n6. iOS游戏配置测试（2项）：游戏参数、模式配置 — 通过\n7. iOS数据配置测试（1项）：数据路径 — 通过\n8. 弹簧动画函数测试（8项）：边界值、参数、回弹效果、性能、阴影函数 — 全部通过\n9. 原有棋盘模型测试（17项）：全部通过\n\n**🐛 发现的 Bug（1个）：**\n- **导入兼容性问题**：iOS风格改造后，COLOR_TEXT_LIGHT 被重命名为 COLOR_TEXT_TERTIARY，但 pause_page.py 和 login_page.py 仍导入旧名称 COLOR_TEXT_LIGHT，导致 ImportError\n  - 影响范围：test_full_flow.py 无法运行\n  - 严重度：P2（有简单修复方案）\n  - 修复建议：从 pause_page.py 第11行和 login_page.py 第11行的 import 中移除 COLOR_TEXT_LIGHT（该变量在这两个文件中未实际使用）\n\n**所有 27 个 Python 源文件编译检查通过。**"
+    },
+    {
+      "id": "t5",
+      "subject": "T2.1: Button 组件 iOS 风格改造",
+      "description": "重构 Button 组件：默认圆角改为 RADIUS_MD(12)，新增 shadow 参数支持柔和阴影，pressed 效果改为缩放 0.96，hover 效果保持颜色变化。涉及文件：src/views/ui_components.py。改动量约50行。验收标准：1) Button 默认 radius=12；2) shadow=True 时绘制阴影；3) pressed 时缩放 0.96；4) 默认 color=COLOR_BTN_PRIMARY (iOS Blue)。",
+      "status": "completed",
+      "assignee": "开发工程师",
+      "dependencies": [
+        "t1",
+        "t3"
+      ],
+      "attempt": 1,
+      "createdAt": 1787565759668,
+      "updatedAt": 1787566033225,
+      "attemptId": "8b992927-b476-4cca-8b4a-75fc6696bce7",
+      "reassigning": false,
+      "output": "T2.1-T2.2: ui_components.py iOS 风格改造已完成。主要改动：\n1) Button 组件：新增 shadow 参数、radius 改为 RADIUS_MD(12)、pressed 效果改为缩放 0.96、默认字号改为 17(iOS Body)\n2) Label 组件：默认字号改为 17(iOS Body)\n3) Panel 组件：新增 shadow 参数、radius 改为 RADIUS_LG(16)\n4) ScoreBox 组件：配色改为 iOS 风格(iOS Gray 6 背景、纯黑数字)\n所有组件已导入 draw_shadow 函数支持 iOS 阴影效果。"
+    },
+    {
+      "id": "t6",
+      "subject": "T2.2: Panel 和 ScoreBox 组件 iOS 风格改造",
+      "description": "Panel：默认圆角改为 RADIUS_LG(16)，新增 shadow 参数。ScoreBox：背景色改为 iOS Gray 6，文字颜色反转为黑字。涉及文件：src/views/ui_components.py。改动量约30行。验收标准：1) Panel 默认 radius=16；2) ScoreBox bg_color=(242,242,247)；3) ScoreBox value_color=(0,0,0)。",
+      "status": "completed",
+      "assignee": "captain",
+      "dependencies": [
+        "t1",
+        "t3"
+      ],
+      "attempt": 1,
+      "createdAt": 1787565806978,
+      "updatedAt": 1787566185171,
+      "reassigning": false,
+      "attemptId": "a601569d-e182-4ba6-86fd-5b5519241648",
+      "output": "T2.2: Panel 和 ScoreBox 组件 iOS 风格改造已完成。\n\n主要改动：\n1) Panel 组件：新增 shadow 参数、radius 改为 RADIUS_LG(16)\n2) ScoreBox 组件：配色改为 iOS 风格(iOS Gray 6 背景、纯黑数字)\n\n注意：ScoreBox 背景色问题（与页面背景色相同）需要在后续任务中修复。"
+    },
+    {
+      "id": "t7",
+      "subject": "T2.3: board_view.py 动画曲线与圆角改造",
+      "description": "将移动/合并/生成动画的缓动函数替换为 ease_out_spring，方块圆角从 8 改为 10。涉及文件：src/views/board_view.py。改动量约15行。验收标准：1) TileRenderer 使用 ease_out_spring；2) 方块圆角 radius=10；3) 动画播放无异常。",
+      "status": "completed",
+      "assignee": "开发工程师",
+      "dependencies": [
+        "t3"
+      ],
+      "attempt": 1,
+      "createdAt": 1787565842985,
+      "updatedAt": 1787566280162,
+      "attemptId": "2750df7e-7d45-4dd1-8e17-1e0a780c3b49",
+      "reassigning": false,
+      "output": "T2.3: board_view.py 动画曲线与圆角改造已完成。主要改动：\n1) 导入 ease_out_spring 替代 ease_out_cubic 和 ease_out_back\n2) 移动动画：ease_out_cubic → ease_out_spring（iOS 弹簧曲线）\n3) 合并动画：ease_out_back → ease_out_spring（iOS 弹簧缩放）\n4) 生成动画：ease_out_back → ease_out_spring（iOS 弹簧缩放）\n5) 方块圆角：8 → 10（iOS 风格）\n6) 空方块圆角：8 → 10（保持一致性）\n验收标准全部满足。"
+    },
+    {
+      "id": "t8",
+      "subject": "T3.1: menu_page.py + game_page.py iOS 适配",
+      "description": "menu_page：标题字号 96→34，副标题 20→15，按钮宽度 220→260，间距 55→56。game_page：游戏结束遮罩 alpha 100→40。涉及文件：src/views/pages/menu_page.py, src/views/pages/game_page.py。改动量约30行。验收标准：1) 菜单标题使用 FONT_SIZE_LARGE_TITLE；2) 按钮使用 iOS Blue；3) 遮罩 alpha=40。",
+      "status": "completed",
+      "assignee": "开发工程师",
+      "dependencies": [
+        "t5",
+        "t6"
+      ],
+      "attempt": 1,
+      "createdAt": 1787566008285,
+      "updatedAt": 1787566469169,
+      "attemptId": "b343c3fd-70e2-478e-8101-f19d1845d7e7",
+      "reassigning": false,
+      "output": "T3.1: menu_page.py + game_page.py iOS 适配已完成。\n\nmenu_page.py 改动：\n1) 标题字号：96 → 34 (FONT_SIZE_LARGE_TITLE)\n2) 副标题字号：20 → 15 (FONT_SIZE_SUBHEAD)\n3) 按钮宽度：220 → 260\n4) 按钮间距：55 → 56\n5) 按钮字号：24 → 17 (FONT_SIZE_BODY)\n6) 颜色更新为 iOS 系统色\n\ngame_page.py 改动：\n1) 游戏结束遮罩 alpha：100 → 40 (iOS 更浅)\n2) 模式提示字号：18 → 15 (FONT_SIZE_SUBHEAD)\n3) 道具按钮字号：18 → 17 (FONT_SIZE_BODY)\n4) 道具次数标签字号：14 → 13 (FONT_SIZE_FOOTNOTE)\n5) 颜色更新为 iOS 系统色\n\n验收标准全部满足。"
+    },
+    {
+      "id": "t9",
+      "subject": "T3.2: result_page.py + achievements_page.py iOS 适配",
+      "description": "result_page：标题字号 36→28，分数字号 48→34。achievements_page：移除硬编码颜色，使用 config 常量。涉及文件：src/views/pages/result_page.py, src/views/pages/achievements_page.py。改动量约25行。验收标准：1) 结算页标题 FONT_SIZE_TITLE1；2) 成就页无硬编码颜色。",
+      "status": "completed",
+      "assignee": "captain",
+      "dependencies": [
+        "t5",
+        "t6"
+      ],
+      "attempt": 1,
+      "createdAt": 1787566016075,
+      "updatedAt": 1787566615404,
+      "reassigning": false,
+      "attemptId": "83d6148f-bad7-40fd-a7e7-d44d72e36c92",
+      "output": "T3.2: result_page.py + achievements_page.py iOS 适配已完成。\n\n主要改动：\n1) result_page.py: 标题字号改为28(FONT_SIZE_TITLE1)，分数字号改为34(FONT_SIZE_LARGE_TITLE)\n2) achievements_page.py: 移除硬编码颜色，使用config常量\n\n注意：架构师审查发现了一些问题需要修复。"
+    },
+    {
+      "id": "t10",
+      "subject": "T3.3: settings_page.py + pause_page.py iOS 适配",
+      "description": "settings_page：按钮字号 20→17，间距 55→56。pause_page：遮罩 alpha 150→40，标题字号 48→28。涉及文件：src/views/pages/settings_page.py, src/views/pages/pause_page.py。改动量约20行。验收标准：1) 按钮字号 FONT_SIZE_BODY；2) 遮罩 alpha=40。",
+      "status": "completed",
+      "assignee": "captain",
+      "dependencies": [
+        "t5",
+        "t6"
+      ],
+      "attempt": 2,
+      "createdAt": 1787566023748,
+      "updatedAt": 1787566993666,
+      "reassigning": false,
+      "attemptId": "9a8f6d07-9546-49c9-872c-afb95cf2a94a",
+      "output": "T3.3: settings_page.py + pause_page.py iOS 适配已完成。\n\nsettings_page.py 改动：\n1) 标题字号：36 → 28 (FONT_SIZE_TITLE1)\n2) 按钮字号：20 → 17 (FONT_SIZE_BODY)\n3) 间距：55 → 56\n4) ToggleButton 颜色：硬编码 → COLOR_GREEN / iOS Gray\n5) 确认对话框：遮罩 alpha 150→40，圆角 12→16，颜色 iOS 化\n\npause_page.py 改动：\n1) 标题字号：48 → 28 (FONT_SIZE_TITLE1)\n2) 按钮宽度：220 → 260 (iOS 宽按钮)\n3) 按钮添加 font_size=FONT_SIZE_BODY\n4) 遮罩使用 COLOR_OVERLAY (alpha=40)\n\n验收标准全部满足。Phase 3 进度：3/4 完成。"
+    },
+    {
+      "id": "t11",
+      "subject": "T3.2: result_page.py + achievements_page.py iOS 适配",
+      "description": "result_page：标题字号 36→28，分数字号 48→34。achievements_page：移除硬编码颜色，使用 config 常量。涉及文件：src/views/pages/result_page.py, src/views/pages/achievements_page.py。改动量约25行。验收标准：1) 结算页标题 FONT_SIZE_TITLE1；2) 成就页无硬编码颜色。",
+      "status": "cancelled",
+      "assignee": "captain",
+      "dependencies": [
+        "t5",
+        "t6"
+      ],
+      "attempt": 2,
+      "createdAt": 1787566388326,
+      "updatedAt": 1787566712034,
+      "reassigning": false,
+      "attemptId": "30ed9e81-eaac-4f06-9976-187b70d6b128"
+    },
+    {
+      "id": "t12",
+      "subject": "T3.3: settings_page.py + pause_page.py iOS 适配",
+      "description": "settings_page：按钮字号 20→17，间距 55→56。pause_page：遮罩 alpha 150→40，标题字号 48→28。涉及文件：src/views/pages/settings_page.py, src/views/pages/pause_page.py。改动量约20行。验收标准：1) 按钮字号 FONT_SIZE_BODY；2) 遮罩 alpha=40。",
+      "status": "cancelled",
+      "assignee": "captain",
+      "dependencies": [
+        "t5",
+        "t6"
+      ],
+      "attempt": 1,
+      "createdAt": 1787566393729,
+      "updatedAt": 1787566729202,
+      "reassigning": false,
+      "attemptId": "c5f81e73-e166-44aa-81d1-2c643b35fe9f"
+    },
+    {
+      "id": "t13",
+      "subject": "T3.4: login_page.py iOS 适配",
+      "description": "输入框圆角 8→10，边框 2px→1px，高度 45→44，移除硬编码颜色。涉及文件：src/views/pages/login_page.py。改动量约15行。验收标准：1) 输入框圆角 10；2) 无硬编码颜色。",
+      "status": "completed",
+      "assignee": "开发工程师",
+      "dependencies": [
+        "t5",
+        "t6"
+      ],
+      "attempt": 1,
+      "createdAt": 1787566399758,
+      "updatedAt": 1787567096533,
+      "attemptId": "2757ff68-461f-4a50-b48a-15e272dfab4e",
+      "reassigning": false,
+      "output": "T3.4: login_page.py iOS 适配已完成。\n\n改动内容：\n1) 标题字号：48 → 28 (FONT_SIZE_TITLE1)\n2) 说明文字字号：20 → 15 (FONT_SIZE_SUBHEAD)\n3) 按钮宽度：220 → 260 (iOS 宽按钮)\n4) 按钮添加 font_size=FONT_SIZE_BODY\n5) 输入框高度：45 → 44 (iOS 标准)\n6) 输入框圆角：8 → 10\n7) 输入框边框：2px → 1px iOS Gray\n8) 遮罩颜色：(250,248,239) → (242,242,247) iOS Gray 6\n9) 提示信息颜色：硬编码 → COLOR_BTN_DANGER\n10) 所有硬编码颜色替换为 iOS 系统色\n\n验收标准全部满足。"
+    },
+    {
+      "id": "t14",
+      "subject": "T4.1: iOS Alert 通用弹窗组件",
+      "description": "从 settings_page.py 提取确认对话框为独立的 iOSAlert 组件，支持标题/描述/确认/取消按钮。涉及文件：src/views/ui_components.py（新增 iOSAlert 类）。改动量约60行。验收标准：1) iOSAlert 类可独立使用；2) settings_page 使用 iOSAlert 替代硬编码对话框。",
+      "status": "completed",
+      "assignee": "开发工程师",
+      "dependencies": [
+        "t5",
+        "t6"
+      ],
+      "attempt": 1,
+      "createdAt": 1787566558784,
+      "updatedAt": 1787567616094,
+      "attemptId": "d4b53b07-2a5b-4734-9343-971e719f7d43",
+      "reassigning": false,
+      "output": "T4.1: iOS Alert 通用弹窗组件已完成。\n\n新增 iOSAlert 类到 ui_components.py：\n1) 支持标题、消息、确认/取消按钮\n2) 支持回调函数 on_confirm/on_cancel\n3) iOS 风格：圆角、阴影、半透明遮罩\n4) 点击遮罩自动关闭\n5) 可独立使用\n\n更新 settings_page.py：\n1) 使用 iOSAlert 替代硬编码对话框\n2) 移除 _show_confirm 状态和相关硬编码\n3) 导入 iOSAlert 组件\n\n验收标准全部满足。"
+    }
+  ],
+  "taskSeq": 14
+}

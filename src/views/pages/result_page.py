@@ -8,8 +8,10 @@ from src.views.pages.base_page import Page
 from src.views.ui_components import Button, Label, Panel
 from src.config import (
     WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT,
+    COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
     COLOR_BTN_PRIMARY, COLOR_BTN_PRIMARY_HOVER,
     COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
+    FONT_SIZE_TITLE1, FONT_SIZE_LARGE_TITLE, FONT_SIZE_SUBHEAD, FONT_SIZE_BODY,
 )
 from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
 from src.i18n import t
@@ -32,15 +34,15 @@ class ResultPage(Page):
         panel_y = 100
         self.panel = Panel(panel_x, panel_y, panel_w, panel_h, (255, 255, 255), radius=16)
 
-        # 标题
-        self.title_label = Label(cx, panel_y + 40, "", font_size=36, color=(119, 110, 101),
+        # 标题 (iOS Title 1: 28pt)
+        self.title_label = Label(cx, panel_y + 40, "", font_size=FONT_SIZE_TITLE1, color=COLOR_TEXT,
                                 bold=True, centered=True)
 
-        # 分数
-        self.score_title = Label(cx, panel_y + 90, t("final_score"), font_size=16,
-                                color=(150, 140, 130), centered=True)
-        self.score_label = Label(cx, panel_y + 120, "0", font_size=48,
-                                color=(119, 110, 101), bold=True, centered=True)
+        # 分数 (iOS Large Title: 34pt)
+        self.score_title = Label(cx, panel_y + 90, t("final_score"), font_size=FONT_SIZE_SUBHEAD,
+                                color=COLOR_TEXT_TERTIARY, centered=True)
+        self.score_label = Label(cx, panel_y + 120, "0", font_size=FONT_SIZE_LARGE_TITLE,
+                                color=COLOR_TEXT, bold=True, centered=True)
 
         # 统计信息
         self.stats_y = panel_y + 180
@@ -49,17 +51,18 @@ class ResultPage(Page):
         # 按钮
         btn_w, btn_h = 160, 48
         btn_y = panel_y + panel_h - 70
+        btn_gap = 12  # 8pt网格: 8×1.5=12
 
         self.btn_retry = Button(
-            cx - btn_w - 10, btn_y, btn_w, btn_h,
-            t("play_again"), font_size=22,
+            cx - btn_w - btn_gap // 2, btn_y, btn_w, btn_h,
+            t("play_again"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
             callback=self._on_retry,
         )
 
         self.btn_menu = Button(
-            cx + 10, btn_y, btn_w, btn_h,
-            t("back_to_menu"), font_size=22,
+            cx + btn_gap // 2, btn_y, btn_w, btn_h,
+            t("back_to_menu"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             callback=self._on_menu,
         )
@@ -71,11 +74,9 @@ class ResultPage(Page):
     def _on_retry(self) -> None:
         """点击重试 / Click retry"""
         self._target_page = "game"
-        self._target_page = "game"
 
     def _on_menu(self) -> None:
-        """点击重试 / Click retry"""
-        self._target_page = "menu"
+        """点击菜单 / Click menu"""
         self._target_page = "menu"
 
     def on_enter(self, **kwargs: Any) -> None:
@@ -119,7 +120,7 @@ class ResultPage(Page):
         cx = WINDOW_WIDTH // 2
         font = get_font_manager().get_small()
         for i, stat in enumerate(stats):
-            self.stat_labels.append((stat, cx, self.stats_y + i * 25))
+            self.stat_labels.append((stat, cx, self.stats_y + i * 24))  # 8pt网格: 8×3=24
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
         """处理事件 / Handle event"""
@@ -154,7 +155,7 @@ class ResultPage(Page):
         # 统计信息
         font = get_font_manager().get_small()
         for text, x, y in self.stat_labels:
-            draw_text_centered(surface, text, font, (120, 110, 100), (x, y))
+            draw_text_centered(surface, text, font, COLOR_TEXT_SECONDARY, (x, y))
 
         # 按钮
         for btn in self.buttons:

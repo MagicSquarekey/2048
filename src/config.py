@@ -1,91 +1,97 @@
 # -*- coding: utf-8 -*-
-# @Function: 全局配置 - 颜色、尺寸、字体、游戏参数
-# @Function: Global configuration - colors, dimensions, fonts, game parameters
+# @Function: 全局配置 - iOS 风格改造后
 
 import os
 
-# ========== 窗口配置 / Window Settings ==========
+# ========== 窗口配置 ==========
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 600
-WINDOW_TITLE = "2048 休闲游戏"
+WINDOW_TITLE = "2048"
 FPS = 60
 
-# ========== 棋盘配置 / Board Settings ==========
-BOARD_SIZE = 4          # 4×4 棋盘
-TILE_SIZE = 95          # 方块尺寸（像素）- 适配 600px 窗口高度
-TILE_GAP = 8            # 方块间距（像素）
-BOARD_PADDING = 15      # 棋盘内边距
+# ========== 棋盘配置 ==========
+BOARD_SIZE = 4
+TILE_SIZE = 90          # 略微缩小以增加间距感
+TILE_GAP = 12           # iOS 风格更宽松的间距
+BOARD_PADDING = 16      # 优化为8pt网格对齐（原15→16）
 BOARD_X = (WINDOW_WIDTH - (TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1))) // 2
-BOARD_Y = 110           # 棋盘起始 Y 坐标 - 适配 600px 窗口高度
+BOARD_Y = 110
 
-# ========== 颜色方案（低饱和度柔和风格） / Color Scheme (Low Saturation Soft Style) ==========
-# 背景色 / Background Colors
-COLOR_BG = (250, 248, 239)              # 游戏背景 - 米白
-COLOR_BOARD_BG = (187, 173, 160)        # 棋盘背景 - 深米色
-COLOR_TILE_EMPTY = (205, 193, 180)      # 空方块 - 浅米色
+# ========== iOS 颜色系统 ==========
 
-# 方块颜色方案（值 -> (背景色, 文字色)） / Tile Color Scheme (value -> (bg, text))
+# 背景色
+COLOR_BG = (242, 242, 247)              # iOS System Gray 6
+COLOR_BOARD_BG = (255, 255, 255)        # 纯白棋盘卡片
+COLOR_TILE_EMPTY = (230, 230, 235)      # iOS Gray 5
+
+# 方块配色方案（iOS 渐变色系）
 TILE_COLORS = {
-    2:    ((238, 228, 218), (119, 110, 101)),
-    4:    ((237, 224, 200), (119, 110, 101)),
-    8:    ((242, 177, 121), (249, 246, 242)),
-    16:   ((245, 149, 99),  (249, 246, 242)),
-    32:   ((246, 124, 95),  (249, 246, 242)),
-    64:   ((246, 94, 59),   (249, 246, 242)),
-    128:  ((237, 207, 114), (249, 246, 242)),
-    256:  ((237, 204, 97),  (249, 246, 242)),
-    512:  ((237, 200, 80),  (249, 246, 242)),
-    1024: ((237, 197, 63),  (249, 246, 242)),
-    2048: ((237, 194, 46),  (249, 246, 242)),
+    2:    ((230, 230, 235), (0, 0, 0)),         # 浅灰 + 黑字
+    4:    ((210, 210, 218), (0, 0, 0)),         # 稍深灰 + 黑字
+    8:    ((255, 159, 10),  (255, 255, 255)),   # iOS Orange + 白字
+    16:   ((255, 94, 58),   (255, 255, 255)),   # iOS Red-Orange + 白字
+    32:   ((255, 59, 48),   (255, 255, 255)),   # iOS Red + 白字
+    64:   ((191, 64, 69),   (255, 255, 255)),   # 深红 + 白字
+    128:  ((255, 204, 0),   (0, 0, 0)),         # iOS Yellow + 黑字
+    256:  ((255, 179, 64),  (0, 0, 0)),         # 金黄 + 黑字
+    512:  ((255, 149, 0),   (255, 255, 255)),   # iOS Orange + 白字
+    1024: ((255, 100, 0),   (255, 255, 255)),   # 深橙 + 白字
+    2048: ((255, 214, 10),  (0, 0, 0)),         # 金色 + 黑字
 }
 
-# UI 颜色 / UI Colors
-COLOR_TEXT = (119, 110, 101)             # 主文字 - 深棕
-COLOR_TEXT_LIGHT = (249, 246, 242)       # 浅色文字 - 白
-COLOR_TEXT_SCORE = (255, 220, 50)        # 分数文字 - 亮黄色，更醒目
+# UI 文字颜色（优化对比度，符合WCAG AA标准）
+COLOR_TEXT = (0, 0, 0)                   # 主要文字 - 纯黑（对比度21:1）
+COLOR_TEXT_SECONDARY = (48, 48, 54)      # 次要文字 - iOS Gray（对比度≥4.5:1，原60→48）
+COLOR_TEXT_TERTIARY = (100, 100, 108)    # 第三级文字（优化对比度5.2:1，原120→100）
+COLOR_TEXT_QUATERNARY = (142, 142, 147)  # 第四级文字（仅装饰性，对比度3.5:1）
 
-# 按钮颜色 / Button Colors
-COLOR_BTN_PRIMARY = (119, 110, 101)
-COLOR_BTN_PRIMARY_HOVER = (140, 130, 120)
-COLOR_BTN_SECONDARY = (186, 173, 160)
-COLOR_BTN_SECONDARY_HOVER = (200, 190, 180)
-COLOR_BTN_DANGER = (200, 80, 80)
-COLOR_BTN_DANGER_HOVER = (220, 100, 100)
+# 兼容旧代码的常量别名
+COLOR_TEXT_LIGHT = (255, 255, 255)       # 浅色文字 - 白色（按钮文字用）
+COLOR_TEXT_LIGHT_SECONDARY = (242, 242, 247)  # 浅色次要文字（对比度15:1）
 
-# 交互参数 / Interaction Parameters
-SWIPE_THRESHOLD = 30  # 滑动最小距离（像素） / Minimum swipe distance (pixels)
-COLOR_SCORE_BG = (187, 173, 160)         # 分数背景 - 深米色
+# 按钮颜色（iOS Blue 系统色）
+COLOR_BTN_PRIMARY = (0, 122, 255)
+COLOR_BTN_PRIMARY_HOVER = (10, 132, 255)
+COLOR_BTN_SECONDARY = (242, 242, 247)
+COLOR_BTN_SECONDARY_HOVER = (230, 230, 235)
+COLOR_BTN_DANGER = (255, 59, 48)
+COLOR_BTN_DANGER_HOVER = (255, 69, 58)
 
-# 按钮颜色
-COLOR_BTN_PRIMARY = (143, 122, 102)      # 主按钮 - 棕色
-COLOR_BTN_PRIMARY_HOVER = (163, 142, 122)
-COLOR_BTN_SECONDARY = (187, 173, 160)    # 次按钮 - 米色
-COLOR_BTN_SECONDARY_HOVER = (207, 193, 180)
-COLOR_BTN_DANGER = (246, 94, 59)         # 危险按钮 - 红色
-COLOR_BTN_DANGER_HOVER = (256, 114, 79)
+# iOS 系统色
+COLOR_GREEN = (52, 199, 89)           # iOS Green (成功/开)
+COLOR_ORANGE = (255, 149, 0)          # iOS Orange
+COLOR_TEAL = (90, 200, 250)           # iOS Teal (信息提示)
+COLOR_INDIGO = (88, 86, 214)          # iOS Indigo (链接)
+COLOR_PINK = (255, 45, 85)            # iOS Pink (强调)
+COLOR_YELLOW = (255, 204, 0)          # iOS Yellow (警告)
+COLOR_RED = (255, 59, 48)             # iOS Red (错误/危险)
 
-# 遮罩颜色 / Overlay Colors
-COLOR_OVERLAY = (0, 0, 0, 150)          # 半透明黑色遮罩 / Semi-transparent black overlay
+# 分数显示
+COLOR_SCORE_BG = (230, 230, 235)         # iOS Gray 5 (与页面背景区分)
 
-# ========== 游戏参数 / Game Parameters ==========
-INITIAL_TILES = 2           # 初始方块数量 / Initial tile count
-WIN_TILE = 2048             # 获胜目标数字 / Winning target number
-UNDO_LIMIT_DEFAULT = 2      # 新用户默认撤销次数 / Default undo limit for new users
-CLEAN_LIMIT_DEFAULT = 0     # 新用户默认清理次数 / Default clean limit for new users
-AD_COOLDOWN = 20            # 广告冷却时间（秒） / Ad cooldown (seconds)
-MAX_AD_PER_DAY = 5          # 每日广告上限 / Max ads per day
+# 遮罩（iOS 更浅）
+COLOR_OVERLAY = (0, 0, 0, 40)
 
-# 随机生成概率 / Random Generation Probability
-TILE_2_PROBABILITY = 0.9    # 生成 2 的概率（90%） / Probability of generating 2 (90%)
+# 交互参数
+SWIPE_THRESHOLD = 30  # 滑动最小距离（像素）
 
-# 分数计算 / Score Calculation
+# ========== 游戏参数 ==========
+INITIAL_TILES = 2
+WIN_TILE = 2048
+UNDO_LIMIT_DEFAULT = 3
+CLEAN_LIMIT_DEFAULT = 1
+
+# 随机生成概率
+TILE_2_PROBABILITY = 0.9
+
+# 分数计算
 SCORE_MULTIPLIERS = {
     "classic": 1.0,
     "timed": 1.5,
     "challenge": 2.0,
 }
 
-# ========== 游戏模式配置 / Game Mode Settings ==========
+# ========== 游戏模式配置 ==========
 MODE_CONFIG = {
     "classic": {
         "name": "经典模式",
@@ -108,24 +114,26 @@ MODE_CONFIG = {
     },
 }
 
-# ========== 动画配置 / Animation Settings ==========
-ANIMATION_MOVE_DURATION = 150       # 方块移动动画时长（毫秒） / Tile move animation duration (ms)
-ANIMATION_MERGE_DURATION = 200      # 方块合并动画时长（毫秒） / Tile merge animation duration (ms)
-ANIMATION_SPAWN_DURATION = 150      # 方块生成动画时长（毫秒） / Tile spawn animation duration (ms)
-ANIMATION_FADE_DURATION = 300       # 淡入淡出动画时长（毫秒） / Fade in/out animation duration (ms)
+# ========== 动画配置（iOS 弹簧动画） ==========
+ANIMATION_MOVE_DURATION = 250       # 移动动画（ms）- iOS 弹簧更慢
+ANIMATION_MERGE_DURATION = 280      # 合并动画（ms）
+ANIMATION_SPAWN_DURATION = 200      # 生成动画（ms）
+ANIMATION_FADE_DURATION = 350       # 淡入淡出（ms）
 
-# ========== 字体配置 / Font Settings ==========
-# 自动检测中文字体，解决中文乱码问题 / Auto-detect Chinese font to fix encoding issues
-import subprocess
+# 弹簧动画参数
+SPRING_DAMPING = 0.75
+SPRING_FREQUENCY = 2.5
+
+# ========== 字号配置（iOS 8pt 网格） ==========
 def _find_chinese_font() -> str:
-    """查找系统中可用的中文字体 / Find available Chinese font on system"""
-    # 常见中文字体优先级 / Common Chinese font priority
+    """查找系统中可用的中文字体"""
     font_candidates = [
-        "simhei.ttf",      # 黑体 / SimHei
-        "msyh.ttc",        # 微软雅黑 / Microsoft YaHei
-        "simsun.ttc",      # 宋体 / SimSun
-        "simkai.ttf",      # 楷体 / SimKai
-        "fang.ttf",        # 仿宋 / FangSong
+        # Windows字体（优先）
+        "msyh.ttc",         # 微软雅黑
+        "simhei.ttf",       # 黑体
+        "simsun.ttc",       # 宋体
+        # macOS字体（仅在macOS系统有效，Windows下会跳过）
+        # "PingFang.ttc",   # PingFang SC（仅macOS）
     ]
     for font_name in font_candidates:
         font_path = os.path.join("C:\\Windows\\Fonts", font_name)
@@ -133,37 +141,70 @@ def _find_chinese_font() -> str:
             return font_path
     return None
 
-FONT_PATH = _find_chinese_font()  # 自动检测中文字体 / Auto-detect Chinese font
-FONT_SIZE_LARGE = 48
-FONT_SIZE_MEDIUM = 32
-FONT_SIZE_SMALL = 24
-FONT_SIZE_TINY = 18
+FONT_PATH = _find_chinese_font()
 
-# 方块数字大小映射 / Tile font size mapping
+# iOS 标准字号（8pt 网格）
+FONT_SIZE_CAPTION2 = 11
+FONT_SIZE_CAPTION1 = 12
+FONT_SIZE_FOOTNOTE = 13
+FONT_SIZE_SUBHEAD = 15
+FONT_SIZE_BODY = 17
+FONT_SIZE_TITLE3 = 20
+FONT_SIZE_TITLE2 = 22
+FONT_SIZE_TITLE1 = 28
+FONT_SIZE_LARGE_TITLE = 34
+
+# 兼容旧接口
+FONT_SIZE_LARGE = FONT_SIZE_LARGE_TITLE
+FONT_SIZE_MEDIUM = FONT_SIZE_BODY
+FONT_SIZE_SMALL = FONT_SIZE_FOOTNOTE
+FONT_SIZE_TINY = FONT_SIZE_CAPTION1
+
+# 方块数字字号映射
 TILE_FONT_SIZES = {
-    2: 40, 4: 40, 8: 40,
-    16: 36, 32: 36, 64: 36,
-    128: 32, 256: 32, 512: 32,
-    1024: 28, 2048: 28,
+    2: 36, 4: 36, 8: 36,
+    16: 34, 32: 34, 64: 34,
+    128: 30, 256: 30, 512: 30,
+    1024: 26, 2048: 26,
 }
 
-# ========== 道具配置 / Item Settings ==========
-UNDO_LIMIT_DEFAULT = 3       # 每局默认撤销次数 / Default undo limit per game
-CLEAN_LIMIT_DEFAULT = 1      # 每局默认清除次数 / Default clean limit per game
+# ========== 圆角配置 ==========
+RADIUS_SM = 8        # 小圆角
+RADIUS_MD = 12       # 中圆角
+RADIUS_LG = 16       # 大圆角
+RADIUS_XL = 20       # 棋盘
 
-# ========== 广告/激励配置 / Ad/Reward Settings ==========
-FREE_DAILY_LIMIT = 5         # 每日免费观看广告次数 / Free daily ad views
-AD_REWARD_AMOUNT = 1         # 每次观看广告获得的道具数量 / Items rewarded per ad view
-AD_COOLDOWN = 30             # 广告冷却时间（秒） / Ad cooldown (seconds)
+# ========== iOS 8pt网格间距系统 ==========
+IOS_SPACING_BASE = 8   # 基础间距单位
 
-# ========== 数据存储路径 / Data Storage Paths ==========
+# 间距令牌
+IOS_SPACING_XXS = 2    # 极小间距（特殊情况）
+IOS_SPACING_XS = 4     # 4pt
+IOS_SPACING_SM = 8     # 8pt（基础单位）
+IOS_SPACING_MD = 16    # 16pt（2倍基础）
+IOS_SPACING_LG = 24    # 24pt（3倍基础）
+IOS_SPACING_XL = 32    # 32pt（4倍基础）
+IOS_SPACING_XXL = 40   # 40pt（5倍基础）
+IOS_SPACING_XXXL = 48  # 48pt（6倍基础）
+
+# 兼容旧接口
+SPACING_TINY = IOS_SPACING_XS
+SPACING_SMALL = IOS_SPACING_SM
+SPACING_MEDIUM = IOS_SPACING_MD
+SPACING_LARGE = IOS_SPACING_LG
+SPACING_HUGE = IOS_SPACING_XL
+
+# ========== 道具配置 ==========
+FREE_DAILY_LIMIT = 5
+AD_REWARD_AMOUNT = 1
+AD_COOLDOWN = 30
+
+# ========== 数据存储路径 ==========
 DATA_DIR = os.path.join(os.path.expanduser("~"), "AppData", "Local", "2048_Game")
 DATA_FILE = os.path.join(DATA_DIR, "game_data.json")
-
-# 确保数据目录存在 / Ensure data directory exists
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# ========== 页面枚举 / Page Enums ==========
+# ========== 页面枚举 ==========
 PAGE_SPLASH = "splash"
 PAGE_MENU = "menu"
 PAGE_GAME = "game"
