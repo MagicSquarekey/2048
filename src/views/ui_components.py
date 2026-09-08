@@ -296,19 +296,16 @@ class ScoreBox(UIComponent):
             return
         # 绘制阴影（iOS风格柔和阴影）
         draw_shadow_optimized(surface, self.rect)
-        # 绘制圆角背景
+        # 绘制圆角背景（iOS 卡片：无边框 + 柔和投影）
         draw_rounded_rect(surface, self.bg_color, self.rect, RADIUS_MD)
-        # 绘制边框（增加可见性）
-        border_rect = pygame.Rect(self.rect.x, self.rect.y, self.rect.width, self.rect.height)
-        pygame.draw.rect(surface, (200, 200, 210), border_rect, width=2, border_radius=RADIUS_MD)
         # 标题（使用深灰色）
         font_sm = get_font_manager().get_small()
         draw_text_centered(surface, self.title, font_sm, self.title_color,
-                          (self.rect.centerx, self.rect.y + 18))
-        # 分数值（使用粗体黑色，确保清晰可读）
+                          (self.rect.centerx, self.rect.y + 17))
+        # 分数值（使用自定义颜色，粗体确保清晰可读）
         font_lg = get_font_manager().get_large(bold=True)
-        draw_text_centered(surface, str(self.value), font_lg, (0, 0, 0),
-                          (self.rect.centerx, self.rect.y + 48))
+        draw_text_centered(surface, str(self.value), font_lg, self.value_color,
+                          (self.rect.centerx, self.rect.y + 42))
 
 
 class iOSAlert(UIComponent):

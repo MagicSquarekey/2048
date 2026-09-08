@@ -34,47 +34,50 @@ class GamePage(Page):
         """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
 
-        # 返回按钮
+        # 返回按钮（与分数卡垂直居中对齐：卡片中心 y=42，按钮中心 y=42）
         self.btn_back = Button(
-            20, 15, 80, 36, t("back"), font_size=16,
+            20, 22, 80, 40, t("back"), font_size=16,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            text_color=COLOR_TEXT,
             callback=self._on_back,
         )
 
-        # 分数框
-        box_w, box_h = 130, 65
+        # 分数框（iOS 系统色数值：当前分数蓝 / 最高分橙）
+        box_w, box_h = 130, 60
         gap = 15
         total_w = box_w * 2 + gap
         start_x = cx - total_w // 2
 
         self.score_box = ScoreBox(start_x, 12, box_w, box_h, t("current_score"), 0,
-                                  title_color=COLOR_TEXT_TERTIARY)
+                                  title_color=COLOR_TEXT_TERTIARY, value_color=(0, 122, 255))
         self.best_box = ScoreBox(start_x + box_w + gap, 12, box_w, box_h, t("best_score"), 0,
-                                  title_color=COLOR_TEXT_TERTIARY)
+                                  title_color=COLOR_TEXT_TERTIARY, value_color=(255, 149, 0))
 
         # 模式/时间/步数提示 (iOS Subhead)
-        self.mode_label = Label(cx, 95, "", font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_SECONDARY, centered=True)
+        self.mode_label = Label(cx, 88, "", font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_SECONDARY, centered=True)
 
         # 棋盘视图
         self.board_view = BoardView()
 
-        # 道具栏 - 适配 600px 窗口高度
-        props_y = 550
+        # 道具栏 - 次数并入按钮文字（y=552, 高40 → 底部592，不超出窗口）
+        props_y = 552
         btn_w, btn_h = 100, 40
         props_cx = cx
         props_start_x = props_cx - (btn_w * 3 + 15 * 2) // 2
 
         self.btn_undo = Button(
             props_start_x, props_y, btn_w, btn_h,
-            t("undo"), font_size=FONT_SIZE_BODY,
+            f"{t('undo')} ×2", font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            text_color=COLOR_TEXT,
             callback=self._on_undo,
         )
 
         self.btn_clean = Button(
             props_start_x + btn_w + 15, props_y, btn_w, btn_h,
-            t("clean"), font_size=FONT_SIZE_BODY,
+            f"{t('clean')} ×0", font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            text_color=COLOR_TEXT,
             callback=self._on_clean,
         )
 
@@ -82,16 +85,9 @@ class GamePage(Page):
             props_start_x + (btn_w + 15) * 2, props_y, btn_w, btn_h,
             t("revive"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            text_color=COLOR_TEXT,
             callback=self._on_revive,
         )
-
-        # 道具次数标签 (iOS Caption1)
-        self.undo_label = Label(props_start_x + btn_w // 2, props_y + 45, "x2", font_size=FONT_SIZE_FOOTNOTE,
-                               color=COLOR_TEXT_TERTIARY, centered=True)
-        self.clean_label = Label(props_start_x + btn_w + 15 + btn_w // 2, props_y + 45, "x0",
-                                font_size=FONT_SIZE_FOOTNOTE, color=COLOR_TEXT_TERTIARY, centered=True)
-        self.revive_label = Label(props_start_x + (btn_w + 15) * 2 + btn_w // 2, props_y + 45,
-                                 "广告", font_size=FONT_SIZE_FOOTNOTE, color=COLOR_TEXT_TERTIARY, centered=True)
 
         self.buttons = [self.btn_back, self.btn_undo, self.btn_clean, self.btn_revive]
 
@@ -138,10 +134,10 @@ class GamePage(Page):
         get_sound_manager().play_sfx("revive")
 
     def _update_props_ui(self) -> None:
-        """更新道具 UI 显示 / Update powerup UI display"""
+        """更新道具 UI 显示（次数并入按钮文字）/ Update powerup UI display"""
         if self._game_state:
-            self.undo_label.set_text(f"x{self._game_state.undo_count}")
-            self.clean_label.set_text(f"x{self._game_state.clean_count}")
+            self.btn_undo.text = f"{t('undo')} ×{self._game_state.undo_count}"
+            self.btn_clean.text = f"{t('clean')} ×{self._game_state.clean_count}"
 
     def on_enter(self, **kwargs: Any) -> None:
         """进入游戏页面 / Enter game page"""
@@ -285,15 +281,11 @@ class GamePage(Page):
         self.score_box.draw(surface)
         self.best_box.draw(surface)
 
-        # 模式提示
-        self.mode_label.draw(surface)
-
-        # 限时模式时间显示
+        # 模式提示（限时模式把剩余时间并入标签，避免与棋盘重叠）
         if self._game_state and self._game_state.mode == "timed":
             time_text = format_time(int(self._game_state.time_remaining))
-            font = get_font_manager().get_small()
-            draw_text_centered(surface, f"剩余时间: {time_text}", font,
-                             COLOR_TEXT, (WINDOW_WIDTH // 2, 510))
+            self.mode_label.set_text(f"限时模式 · 剩余 {time_text}")
+        self.mode_label.draw(surface)
 
         # 棋盘
         if self._game_state and self._game_state.board:
@@ -315,9 +307,6 @@ class GamePage(Page):
         self.btn_undo.draw(surface)
         self.btn_clean.draw(surface)
         self.btn_revive.draw(surface)
-        self.undo_label.draw(surface)
-        self.clean_label.draw(surface)
-        self.revive_label.draw(surface)
 
     def get_game_result(self) -> Optional[dict]:
         """获取游戏结果（供结算页面使用）/ Get game result (for result page)"""

@@ -30,9 +30,13 @@ class MenuPage(Page):
         """初始化 UI 元素 / Initialize UI elements"""
         cx = WINDOW_WIDTH // 2
 
+        # iOS 系统色（数值强调色）
+        color_blue = (0, 122, 255)     # iOS Blue - 当前分数
+        color_orange = (255, 149, 0)   # iOS Orange - 最高分
+
         # 标题 (iOS Large Title: 34pt)
         self.title_label = Label(
-            cx, 50, "2048",
+            cx, 54, "2048",
             font_size=FONT_SIZE_LARGE_TITLE, color=COLOR_TEXT, bold=True, centered=True,
         )
 
@@ -42,8 +46,8 @@ class MenuPage(Page):
             font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_SECONDARY, bold=False, centered=True,
         )
 
-        # 分数显示区
-        box_w, box_h = 120, 60
+        # 分数显示区（8pt 网格：y=140, 高64 → 底部204）
+        box_w, box_h = 130, 64
         gap = 20
         total_w = box_w * 3 + gap * 2
         start_x = cx - total_w // 2
@@ -51,21 +55,21 @@ class MenuPage(Page):
 
         self.score_box = ScoreBox(
             start_x, y, box_w, box_h, t("current_score"), 0,
-            title_color=COLOR_TEXT_TERTIARY
+            title_color=COLOR_TEXT_TERTIARY, value_color=color_blue,
         )
         self.best_box = ScoreBox(
             start_x + box_w + gap, y, box_w, box_h, t("best_score"), 0,
-            title_color=COLOR_TEXT_TERTIARY
+            title_color=COLOR_TEXT_TERTIARY, value_color=color_orange,
         )
         self.games_box = ScoreBox(
             start_x + (box_w + gap) * 2, y, box_w, box_h, t("total_games"), 0,
-            title_color=COLOR_TEXT_TERTIARY
+            title_color=COLOR_TEXT_TERTIARY,
         )
 
-        # 主要按钮 - 三个蓝色按钮
-        btn_w, btn_h = 280, 50
-        btn_y_start = 230
-        btn_gap = 60  # 增大间距
+        # 主要按钮 - 三个蓝色主操作（y=240 起，均匀分布）
+        btn_w, btn_h = 280, 52
+        btn_y_start = 240
+        btn_gap = 68  # 52 + 16 间距
 
         self.btn_classic = Button(
             cx - btn_w // 2, btn_y_start, btn_w, btn_h,
@@ -88,14 +92,14 @@ class MenuPage(Page):
             callback=lambda: self._on_btn_click("challenge"),
         )
 
-        # 次要按钮 - 两个灰色按钮，更小更轻
-        btn_sm_w, btn_sm_h = 180, 42
-        btn_sm_gap = 20
-        btn_sm_y = btn_y_start + btn_gap * 3 + 20
+        # 次要按钮 - 并排两个（紧随主按钮，间距 16）
+        btn_sm_w, btn_sm_h = 160, 46
+        btn_sm_gap = 16
+        btn_sm_y = btn_y_start + btn_gap * 2 + btn_h + 16
 
         self.btn_settings = Button(
             cx - btn_sm_w - btn_sm_gap // 2, btn_sm_y, btn_sm_w, btn_sm_h,
-            t("settings"), font_size=FONT_SIZE_FOOTNOTE,
+            t("settings"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             text_color=COLOR_TEXT_SECONDARY,
             callback=lambda: self._on_btn_click("settings"),
@@ -103,7 +107,7 @@ class MenuPage(Page):
 
         self.btn_achievements = Button(
             cx + btn_sm_gap // 2, btn_sm_y, btn_sm_w, btn_sm_h,
-            t("achievements"), font_size=FONT_SIZE_FOOTNOTE,
+            t("achievements"), font_size=FONT_SIZE_BODY,
             color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
             text_color=COLOR_TEXT_SECONDARY,
             callback=lambda: self._on_btn_click("achievements"),

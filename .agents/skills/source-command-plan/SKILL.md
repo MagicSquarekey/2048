@@ -1,0 +1,40 @@
+---
+name: "source-command-plan"
+description: "Migrated source command `plan`"
+---
+
+# source-command-plan
+
+Use this skill when the user asks to run the migrated source command `plan`.
+
+## Command Template
+
+# /plan — 任务规划
+
+将需求拆解为可执行的开发计划。
+
+## 使用方式
+
+```
+/plan 实现用户登录功能
+/plan 优化测试用例结构
+```
+
+## 输出格式
+
+```markdown
+## 开发计划
+
+### 目标
+[一句话描述]
+
+### 任务清单
+- [ ] 任务1
+- [ ] 任务2
+
+### 风险点
+- ⚠️ [风险描述]
+
+### 验证方式
+- ✅ [如何验证]
+```

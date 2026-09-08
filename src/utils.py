@@ -57,6 +57,37 @@ def get_font_manager() -> FontManager:
     return FontManager()
 
 
+# ========== 圆角矩形 Surface 缓存（性能优化） ==========
+
+class RoundedRectCache:
+    """
+    圆角矩形 Surface 缓存 - 避免每帧创建临时 Surface
+
+    性能优化：相同 (宽, 高, 颜色, 圆角) 的圆角矩形只创建一次，
+    后续每帧直接 blit 缓存结果，消除 GC 压力（游戏页每帧约 40+ 次调用）。
+    """
+    _cache: dict = {}
+    _max_cache_size = 256
+
+    @classmethod
+    def get_surface(
+        cls,
+        width: int,
+        height: int,
+        color: Tuple[int, int, int],
+        radius: int,
+    ) -> pygame.Surface:
+        key = (width, height, color, radius)
+        surface = cls._cache.get(key)
+        if surface is None:
+            if len(cls._cache) >= cls._max_cache_size:
+                cls._cache.clear()
+            surface = pygame.Surface((width, height), pygame.SRCALPHA)
+            pygame.draw.rect(surface, color, (0, 0, width, height), border_radius=radius)
+            cls._cache[key] = surface
+        return surface
+
+
 def draw_rounded_rect(
     surface: pygame.Surface,
     color: Tuple[int, int, int],
@@ -65,23 +96,21 @@ def draw_rounded_rect(
     border_width: int = 0,
     border_color: Optional[Tuple[int, int, int]] = None,
 ) -> None:
-    """绘制圆角矩形 / Draw rounded rectangle"""
-    shape_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-    pygame.draw.rect(
-        shape_surface,
-        color,
-        (0, 0, rect.width, rect.height),
-        border_radius=radius,
-    )
+    """绘制圆角矩形（带缓存，直接 blit）/ Draw rounded rectangle (cached)"""
     if border_width > 0 and border_color:
+        # 带边框的走原逻辑（低频路径）
+        shape_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
         pygame.draw.rect(
-            shape_surface,
-            border_color,
-            (0, 0, rect.width, rect.height),
-            width=border_width,
-            border_radius=radius,
+            shape_surface, color, (0, 0, rect.width, rect.height), border_radius=radius,
         )
-    surface.blit(shape_surface, rect.topleft)
+        pygame.draw.rect(
+            shape_surface, border_color, (0, 0, rect.width, rect.height),
+            width=border_width, border_radius=radius,
+        )
+        surface.blit(shape_surface, rect.topleft)
+        return
+    cached = RoundedRectCache.get_surface(rect.width, rect.height, color, radius)
+    surface.blit(cached, rect.topleft)
 
 
 def draw_text_centered(
