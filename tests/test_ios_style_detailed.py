@@ -241,9 +241,10 @@ class TestIOSDataConfig(unittest.TestCase):
         self.assertIsInstance(DATA_DIR, str)
         self.assertIsInstance(DATA_FILE, str)
 
-        # 验证路径包含AppData
-        self.assertIn("AppData", DATA_DIR)
-        self.assertIn("2048_Game", DATA_DIR)
+        # 验证路径包含AppData（未通过 GAME_2048_DATA_DIR 重定向时）
+        if not os.environ.get("GAME_2048_DATA_DIR"):
+            self.assertIn("AppData", DATA_DIR)
+            self.assertIn("2048_Game", DATA_DIR)
 
         # 验证文件扩展名
         self.assertTrue(DATA_FILE.endswith(".json"))

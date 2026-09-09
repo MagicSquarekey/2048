@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-# @Function: 成就页面 / Achievements page
+# @Function: 成就页面 / Achievements page - 深空霓虹主题
 
 import pygame
 from typing import Optional, Any
 
 from src.views.pages.base_page import Page
-from src.views.ui_components import Button, Label, Panel
-from src.models.achievements import ACHIEVEMENTS, get_all_achievements
-from src.models.data_manager import DataManager
+from src.views.ui_components import Button, Label
+from src.models.achievements import get_all_achievements
 from src.config import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT,
-    COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
-    COLOR_TILE_EMPTY, COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
-    FONT_SIZE_TITLE1, FONT_SIZE_BODY, FONT_SIZE_FOOTNOTE,
+    WINDOW_WIDTH, COLOR_TEXT, COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
+    ACCENT_GOLD, CARD_BG, CARD_BORDER, COLOR_TEXT_QUATERNARY,
+    FONT_SIZE_TITLE1, FONT_SIZE_BODY,
 )
-from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
+from src.utils import (
+    blit_background, draw_card, draw_text_centered, get_font_manager,
+)
 
 
 class AchievementsPage(Page):
@@ -28,21 +28,22 @@ class AchievementsPage(Page):
         """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
 
-        # 标题 (iOS Title 1: 28pt)
-        self.title_label = Label(cx, 40, "成就", font_size=FONT_SIZE_TITLE1, color=COLOR_TEXT,
-                                bold=True, centered=True)
+        # 标题
+        self.title_label = Label(cx, 48, "成就", font_size=FONT_SIZE_TITLE1,
+                                 color=COLOR_TEXT, bold=True, centered=True)
 
-        # 成就面板
-        panel_w, panel_h = 440, 420
+        # 成就卡片
+        panel_w, panel_h = 480, 424
         panel_x = cx - panel_w // 2
-        panel_y = 100
-        self.panel = Panel(panel_x, panel_y, panel_w, panel_h, (255, 255, 255), radius=16)
+        panel_y = 96
+        self.panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
 
-        # 返回按钮 (iOS Body: 17pt)
+        # 返回按钮
         self.btn_back = Button(
-            cx - 80, panel_y + panel_h + 16, 160, 44,  # 8pt网格: 8×2=16
+            cx - 90, panel_y + panel_h + 16, 180, 44,
             "返回主菜单", font_size=FONT_SIZE_BODY,
-            color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            color=CARD_BG, hover_color=(66, 70, 116),
+            text_color=COLOR_TEXT_SECONDARY, style="ghost", shadow=False,
             callback=self._on_back,
         )
 
@@ -78,54 +79,56 @@ class AchievementsPage(Page):
 
     def draw(self, surface: pygame.Surface) -> None:
         """绘制成就页面 / Draw achievements page"""
-        surface.fill(COLOR_BG)
+        blit_background(surface)
 
-        # 标题
         self.title_label.draw(surface)
+        draw_card(surface, self.panel_rect, 20)
 
-        # 面板
-        self.panel.draw(surface)
-
-        # 成就列表
         cx = WINDOW_WIDTH // 2
-        start_y = self.panel.rect.y + 20
-        item_h = 56  # 8pt网格: 8×7=56
-        font = get_font_manager().get_small()
-        font_name = get_font_manager().get_tiny()
+        start_y = self.panel_rect.y + 18
+        item_h = 62
+        font_name = get_font_manager().get_font(15, bold=True)
+        font_desc = get_font_manager().get_tiny()
+        font_status = get_font_manager().get_tiny()
+        font_icon = get_font_manager().get_font(18, bold=True)
 
         for i, ach in enumerate(self._achievements):
             y = start_y + i * item_h
-            if y + item_h > self.panel.rect.bottom - 10:
+            if y + item_h - 8 > self.panel_rect.bottom - 8:
                 break
 
-            # 成就项背景 (iOS 系统色)
-            item_rect = pygame.Rect(cx - 190, y, 380, 44)
-            bg_color = COLOR_TILE_EMPTY if ach["unlocked"] else (245, 245, 245)
-            draw_rounded_rect(surface, bg_color, item_rect, 8)
+            unlocked = ach["unlocked"]
+            item_rect = pygame.Rect(cx - 216, y + 4, 432, 50)
+            row_bg = (46, 48, 82) if unlocked else (36, 38, 66)
+            draw_card(surface, item_rect, 12, bg=row_bg,
+                      border=ACCENT_GOLD if unlocked else CARD_BORDER)
 
-            # 图标
-            icon = ach["icon"] if ach["unlocked"] else "🔒"
-            icon_color = COLOR_TEXT if ach["unlocked"] else (180, 180, 180)
-            # 使用文字代替 emoji（避免渲染问题）
-            draw_text_centered(surface, ach["id"][:4], font_name, icon_color,
-                             (item_rect.x + 25, item_rect.centery))
+            # 左侧圆形徽标：已达成 ✓（金，线条绘制），未达成 ?（灰）
+            icon_rect = pygame.Rect(item_rect.x + 12, item_rect.y + 9, 32, 32)
+            pygame.draw.circle(surface, ACCENT_GOLD if unlocked else (70, 73, 108),
+                               icon_rect.center, 16)
+            if unlocked:
+                cx0, cy0 = icon_rect.center
+                pygame.draw.line(surface, (40, 34, 10), (cx0 - 6, cy0 + 1),
+                                 (cx0 - 1, cy0 + 6), width=3)
+                pygame.draw.line(surface, (40, 34, 10), (cx0 - 1, cy0 + 6),
+                                 (cx0 + 7, cy0 - 5), width=3)
+            else:
+                draw_text_centered(surface, "?", font_icon, COLOR_TEXT_QUATERNARY,
+                                   icon_rect.center)
 
-            # 名称
-            name_color = COLOR_TEXT if ach["unlocked"] else (180, 180, 180)
-            draw_text_centered(surface, ach["name"], font, name_color,
-                             (item_rect.x + 100, item_rect.centery - 8))
-
-            # 描述
-            desc_color = COLOR_TEXT_TERTIARY if ach["unlocked"] else (200, 200, 200)
-            draw_text_centered(surface, ach["description"], font_name, desc_color,
-                             (item_rect.x + 100, item_rect.centery + 10))
+            # 名称 + 描述（左对齐，避免与徽标重叠）
+            name_surf = font_name.render(ach["name"], True,
+                                         COLOR_TEXT if unlocked else COLOR_TEXT_QUATERNARY)
+            surface.blit(name_surf, (item_rect.x + 58, item_rect.y + 9))
+            desc_surf = font_desc.render(ach["description"], True,
+                                         COLOR_TEXT_TERTIARY if unlocked else (96, 99, 130))
+            surface.blit(desc_surf, (item_rect.x + 59, item_rect.y + 29))
 
             # 状态
-            status_text = "✓ 已达成" if ach["unlocked"] else "未达成"
-            from src.config import COLOR_GREEN
-            status_color = COLOR_GREEN if ach["unlocked"] else (180, 180, 180)
-            draw_text_centered(surface, status_text, font_name, status_color,
-                             (item_rect.right - 50, item_rect.centery))
+            status_text = "已达成" if unlocked else "未达成"
+            status_color = ACCENT_GOLD if unlocked else COLOR_TEXT_QUATERNARY
+            draw_text_centered(surface, status_text, font_status, status_color,
+                               (item_rect.right - 42, item_rect.centery))
 
-        # 按钮
         self.btn_back.draw(surface)

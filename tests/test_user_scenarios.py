@@ -658,6 +658,13 @@ class TestUserScenario_EdgeCases(unittest.TestCase):
         ])
         moved = board.move("left")
         self.assertTrue(moved)
+        # move 后会在随机空位生成新方块；剔除生成块（保留移动块）后再做确定性断言
+        moved_tile = board.grid[1][0]
+        for r in range(board.size):
+            for c in range(board.size):
+                t = board.grid[r][c]
+                if t and t is not moved_tile and t.is_new:
+                    board.grid[r][c] = None
         self.assertEqual(board.grid[1][0].value, 2)
         self.assertIsNone(board.grid[1][1])
 

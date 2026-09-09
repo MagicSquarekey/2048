@@ -25,7 +25,11 @@ def hide_console_window():
 hide_console_window()
 
 import pygame
-from src.config import WINDOW_WIDTH, WINDOW_HEIGHT, FPS, COLOR_BG
+from src.config import (
+    WINDOW_WIDTH, WINDOW_HEIGHT, FPS,
+    KEY_REPEAT_DELAY_MS, KEY_REPEAT_INTERVAL_MS,
+)
+from src.utils import blit_background
 from src.views.pages import (
     PageManager, MenuPage, GamePage, ResultPage,
     SettingsPage, AchievementsPage, PausePage, LoginPage,
@@ -37,6 +41,8 @@ def init_pygame() -> pygame.Surface:
     pygame.init()
     pygame.display.set_caption("2048 - 休闲游戏")
     surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    # 方向键按住连发：配合游戏页输入队列实现按住连续滑动
+    pygame.key.set_repeat(KEY_REPEAT_DELAY_MS, KEY_REPEAT_INTERVAL_MS)
     return surface
 
 
@@ -70,16 +76,34 @@ def main() -> None:
             pm.switch_to("game", mode="timed")
         elif page_name == "challenge":
             pm.switch_to("game", mode="challenge")
+        elif page_name == "restart":
+            # 从暂停页重开：先弹出暂停页（清理压栈），再按原模式重进
+            game_page = pm.get_page("game")
+            mode = "classic"
+            if game_page and game_page._game_state:
+                mode = game_page._game_state.mode
+            pm.pop_page()
+            pm.switch_to("game", mode=mode)
         elif page_name == "result":
             game_page = pm.get_page("game")
             result = game_page.get_game_result() if game_page else None
             pm.switch_to("result", result=result or {})
         elif page_name == "pause":
+            # 暂停时同步暂停游戏计时
+            game_page = pm.get_page("game")
+            if game_page and game_page._game_state:
+                game_page._game_state.pause()
             pm.push_page("pause")
         elif page_name == "resume":
-            # 从暂停恢复，pop 暂停页
+            # 从暂停恢复，pop 暂停页并恢复计时
+            game_page = pm.get_page("game")
+            if game_page and game_page._game_state:
+                game_page._game_state.resume()
             pm.pop_page()
         elif page_name in ("menu", "settings", "achievements", "login"):
+            # 若从暂停页离开，先弹出压栈的游戏页，避免残留脏栈
+            if pm.current_page and pm.current_page.name == "pause":
+                pm.pop_page()
             pm.switch_to(page_name)
         else:
             pm.switch_to(page_name)
@@ -131,7 +155,7 @@ def main() -> None:
                 handle_page_switch(target)
 
         # 绘制
-        surface.fill(COLOR_BG)
+        blit_background(surface)
         pm.draw(surface)
         pygame.display.flip()
 

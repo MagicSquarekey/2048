@@ -23,7 +23,8 @@ from src.config import (
     COLOR_GREEN, COLOR_TEXT,
     FONT_SIZE_BODY,
 )
-from src.views.pages.settings_page import IOSSwitch, SettingsPage
+from src.views.pages.settings_page import SettingsPage
+from src.views.ui_components import iOSSwitch
 from src.views.ui_components import Button
 
 
@@ -32,98 +33,91 @@ from src.views.ui_components import Button
 # ============================================================
 
 class TestIOSSwitch(unittest.TestCase):
-    """iOS Switch 开关组件 - 验证 t2 开发成果"""
+    """iOS Switch 开关组件 - 按真实 iOSSwitch API 验证"""
 
     def setUp(self):
         self.surface = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
 
     def test_switch_creation(self):
         """TC-P4-001.01: Switch 组件创建"""
-        switch = IOSSwitch(100, 100, 200, 44, "音效: 开")
+        switch = iOSSwitch(100, 100, 51, 31)
         self.assertEqual(switch.rect.x, 100)
         self.assertEqual(switch.rect.y, 100)
-        self.assertEqual(switch.rect.width, 200)
-        self.assertEqual(switch.rect.height, 44)
+        self.assertEqual(switch.rect.width, 51)
+        self.assertEqual(switch.rect.height, 31)
 
     def test_switch_default_state_on(self):
-        """TC-P4-001.02: Switch 默认开启状态"""
-        switch = IOSSwitch(0, 0, 200, 44, "测试", is_on=True)
+        """TC-P4-001.02: Switch 开启状态"""
+        switch = iOSSwitch(0, 0, 51, 31, is_on=True)
         self.assertTrue(switch.is_on)
-        self.assertEqual(switch.color, COLOR_GREEN)
+        self.assertEqual(switch.on_color, COLOR_GREEN)
 
     def test_switch_default_state_off(self):
-        """TC-P4-001.03: Switch 关闭状态"""
-        switch = IOSSwitch(0, 0, 200, 44, "测试", is_on=False)
+        """TC-P4-001.03: Switch 默认关闭状态"""
+        switch = iOSSwitch(0, 0, 51, 31)
         self.assertFalse(switch.is_on)
-        self.assertEqual(switch.color, (142, 142, 147))  # iOS Gray
 
     def test_switch_toggle(self):
         """TC-P4-001.04: Switch 状态切换"""
-        switch = IOSSwitch(0, 0, 200, 44, "测试", is_on=True)
+        switch = iOSSwitch(0, 0, 51, 31, is_on=True)
         switch.toggle()
         self.assertFalse(switch.is_on)
         switch.toggle()
         self.assertTrue(switch.is_on)
 
     def test_switch_ios_dimensions(self):
-        """TC-P4-001.05: Switch iOS 标准尺寸"""
-        switch = IOSSwitch(0, 0, 200, 44, "测试")
-        self.assertEqual(switch._switch_width, 51)  # iOS 标准宽度
-        self.assertEqual(switch._switch_height, 31)  # iOS 标准高度
-        self.assertEqual(switch._knob_size, 27)  # 滑块尺寸
+        """TC-P4-001.05: Switch iOS 标准尺寸（51x31，滑块 27）"""
+        switch = iOSSwitch(0, 0)
+        self.assertEqual(switch.rect.width, 51)
+        self.assertEqual(switch.rect.height, 31)
 
     def test_switch_animation_parameters(self):
         """TC-P4-001.06: Switch 动画参数"""
-        switch = IOSSwitch(0, 0, 200, 44, "测试")
+        switch = iOSSwitch(0, 0, 51, 31)
         self.assertGreater(switch._animation_speed, 0)
-        # _knob_x 可以是 int 或 float
-        self.assertIsInstance(switch._knob_x, (int, float))
-        self.assertIsInstance(switch._target_knob_x, (int, float))
+        self.assertIsInstance(switch._thumb_x, (int, float))
+        self.assertIsInstance(switch._target_x, (int, float))
 
     def test_switch_draw_no_crash(self):
         """TC-P4-001.07: Switch 绘制无异常"""
-        switch = IOSSwitch(100, 100, 200, 44, "音效")
+        switch = iOSSwitch(100, 100, 51, 31, is_on=True)
         switch.draw(self.surface)
 
     def test_switch_draw_off_state(self):
         """TC-P4-001.08: Switch 关闭状态绘制"""
-        switch = IOSSwitch(100, 100, 200, 44, "音效", is_on=False)
+        switch = iOSSwitch(100, 100, 51, 31, is_on=False)
         switch.draw(self.surface)
 
-    def test_switch_label_text(self):
-        """TC-P4-001.09: Switch 标签文本显示"""
-        switch = IOSSwitch(0, 0, 200, 44, "音效: 开")
-        self.assertIn("音效", switch.text)
+    def test_switch_thumb_target_tracks_state(self):
+        """TC-P4-001.09: 滑块目标位置跟随开关状态"""
+        switch = iOSSwitch(0, 0, 51, 31, is_on=False)
+        off_x = switch._target_x
+        switch.toggle()
+        self.assertNotEqual(switch._target_x, off_x)
 
     def test_switch_update_animation(self):
         """TC-P4-001.10: Switch 动画更新"""
-        switch = IOSSwitch(0, 0, 200, 44, "测试", is_on=True)
-        initial_knob_x = switch._knob_x
+        switch = iOSSwitch(0, 0, 51, 31, is_on=False)
+        initial_knob_x = switch._thumb_x
         switch.toggle()
-        # 更新多帧
         for _ in range(30):
             switch.update(0.016)
-        # 滑块位置应该变化
-        self.assertNotAlmostEqual(switch._knob_x, initial_knob_x, delta=1.0)
+        self.assertAlmostEqual(switch._thumb_x, switch._target_x, delta=1.0)
+        self.assertNotAlmostEqual(switch._thumb_x, initial_knob_x, delta=1.0)
 
     def test_switch_in_settings_page(self):
         """TC-P4-001.11: Switch 集成到设置页面"""
         page = SettingsPage()
-        # 验证音效开关是 IOSSwitch 类型
-        self.assertIsInstance(page.btn_sound, IOSSwitch)
-        # 验证音乐开关是 IOSSwitch 类型
-        self.assertIsInstance(page.btn_music, IOSSwitch)
+        self.assertIsInstance(page.btn_sound, iOSSwitch)
+        self.assertIsInstance(page.btn_music, iOSSwitch)
 
     def test_switch_callback(self):
-        """TC-P4-001.12: Switch 回调触发"""
+        """TC-P4-001.12: Switch 回调触发并携带新状态"""
         called = []
-        switch = IOSSwitch(0, 0, 200, 44, "测试", callback=lambda: called.append(True))
-        switch.is_hovered = True
-        switch.is_pressed = True
-        event = pygame.event.Event(pygame.MOUSEBUTTONUP, button=1, pos=(100, 22))
-        switch.handle_event(event)
-        self.assertEqual(len(called), 1)
-
+        switch = iOSSwitch(0, 0, 51, 31, is_on=False,
+                           callback=lambda is_on: called.append(is_on))
+        switch.toggle()
+        self.assertEqual(called, [True])
 
 # ============================================================
 # TC-P4-002: Button 按压缩放动画测试 (t3 验收)
@@ -251,7 +245,7 @@ class TestRegressionPhase4(unittest.TestCase):
         page = SettingsPage()
         self.assertIsNotNone(page.btn_sound)
         self.assertIsNotNone(page.btn_music)
-        self.assertIsNotNone(page.btn_lang)
+        self.assertIsNotNone(page.lang_value)
         self.assertIsNotNone(page.btn_reset)
         self.assertIsNotNone(page.btn_back)
 

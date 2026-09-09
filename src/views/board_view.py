@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # @Function: BoardView - 棋盘视图、方块渲染、动画
-# 性能设计：方块整块预渲染缓存（背景+数字一次成型），每帧仅 blit；
-#          圆角矩形走全局缓存；移动动画用 ease_out_cubic 平滑减速。
+# 性能设计：方块整块预渲染缓存（辉光+渐变+数字一次成型），每帧仅 blit；
+#          渐变/卡片/辉光走全局缓存；移动动画用 ease_out_cubic 平滑减速。
 
 import math
-import time
 from typing import List, Tuple, Optional
 
 import pygame
@@ -18,36 +17,57 @@ from src.config import (
 from src.models.board import GameBoard
 from src.models.tile import Tile
 from src.utils import (
-    draw_rounded_rect, get_font_manager,
+    get_font_manager,
     ease_out_cubic, ease_out_back, lerp, get_tile_color,
-    draw_shadow_optimized,
+    lighten, draw_card, draw_glow, draw_gradient_rounded_rect, draw_rounded_rect,
 )
+
+# 高级方块（>=128）预渲染外发光的边距（px）
+_TILE_GLOW_PAD = 10
+_TILE_RADIUS = 14
 
 
 class TileSurfaceCache:
     """
     方块 Surface 预渲染缓存 / Pre-rendered tile surface cache
 
-    将 (背景圆角矩形 + 数字) 一次性渲染成 Surface 并按方块值缓存，
-    静止方块每帧只需一次 blit —— 彻底消除每帧的
-    Surface 创建、圆角绘制与字体渲染开销。
+    将 (辉光 + 渐变底 + 数字投影) 一次性渲染成 Surface 按方块值缓存，
+    静止方块每帧只需一次 blit。>=128 的方块自带同色霓虹辉光。
+    缓存值为 (surface, pad)，pad 为辉光外边距，blit 时向左上偏移。
     """
 
     _cache: dict = {}
 
     @classmethod
-    def get_surface(cls, value: int) -> pygame.Surface:
-        surface = cls._cache.get(value)
-        if surface is None:
+    def get(cls, value: int) -> Tuple[pygame.Surface, int]:
+        entry = cls._cache.get(value)
+        if entry is None:
             bg_color, text_color = get_tile_color(value)
-            surface = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
-            pygame.draw.rect(surface, bg_color, (0, 0, TILE_SIZE, TILE_SIZE), border_radius=12)
+            glow = value >= 128
+            pad = _TILE_GLOW_PAD if glow else 0
+            size = TILE_SIZE + pad * 2
+            surface = pygame.Surface((size, size), pygame.SRCALPHA)
+
+            inner = pygame.Rect(pad, pad, TILE_SIZE, TILE_SIZE)
+            if glow:
+                draw_glow(surface, inner, bg_color, alpha=110, blur=pad, radius=_TILE_RADIUS)
+            draw_gradient_rounded_rect(
+                surface, inner, lighten(bg_color, 1.28), bg_color, _TILE_RADIUS,
+            )
+
             font_size = TILE_FONT_SIZES.get(value, 28)
             font = get_font_manager().get_font(font_size, bold=True)
+            center = inner.center
+            # 数字投影（向下 2px 半透明深色），增强立体感
+            shadow = font.render(str(value), True, (0, 0, 0))
+            shadow.set_alpha(80)
+            surface.blit(shadow, shadow.get_rect(center=(center[0], center[1] + 2)))
             text = font.render(str(value), True, text_color)
-            surface.blit(text, text.get_rect(center=(TILE_SIZE // 2, TILE_SIZE // 2)))
-            cls._cache[value] = surface
-        return surface
+            surface.blit(text, text.get_rect(center=center))
+
+            entry = (surface, pad)
+            cls._cache[value] = entry
+        return entry
 
 
 class TileRenderer:
@@ -86,14 +106,15 @@ class TileRenderer:
         if pos is None:
             pos = (float(tile.row), float(tile.col))
         x, y = TileRenderer.tile_origin(pos[0], pos[1])
-        cached = TileSurfaceCache.get_surface(tile.value)
+        cached, pad = TileSurfaceCache.get(tile.value)
 
         if scale >= 0.999:
-            surface.blit(cached, (x, y))
+            surface.blit(cached, (x - pad, y - pad))
             return
 
         # 缩放路径（生成/合并动画），以方块中心为基准
-        size = max(1, int(TILE_SIZE * scale))
+        full = TILE_SIZE + pad * 2
+        size = max(1, int(full * scale))
         scaled = pygame.transform.smoothscale(cached, (size, size))
         cx = x + TILE_SIZE / 2
         cy = y + TILE_SIZE / 2
@@ -106,7 +127,8 @@ class BoardView:
     def __init__(self) -> None:
         self.animations: List[dict] = []
         self.is_animating: bool = False
-        self._anim_start: float = 0
+        self._anim_elapsed: float = 0  # 累计动画时长（秒），由 update(dt) 驱动，帧率无关
+        self._anim_total: float = 0    # 整轮动画总时长（秒），供输入队列查询进度
         self.board_rect = pygame.Rect(
             BOARD_X, BOARD_Y,
             TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1) + BOARD_PADDING * 2,
@@ -117,33 +139,51 @@ class BoardView:
         """开始移动动画 / Start move animation"""
         self.animations = []
         self.is_animating = True
-        self._anim_start = time.perf_counter()
+        self._anim_elapsed = 0.0
 
         move_s = ANIMATION_MOVE_DURATION / 1000.0
         merge_s = ANIMATION_MERGE_DURATION / 1000.0
         spawn_s = ANIMATION_SPAWN_DURATION / 1000.0
 
+        start = 0.0
+        end_time = 0.0
         for tile in board.get_all_tiles():
             if tile.merged_from:
-                anim_type, duration, start = "merge", merge_s, self._anim_start
+                anim_type, duration, anim_start = "merge", merge_s, start
             elif tile.is_new:
-                anim_type, duration, start = "spawn", spawn_s, self._anim_start + move_s * 0.6
+                anim_type, duration, anim_start = "spawn", spawn_s, move_s * 0.5
             elif tile.prev_row is not None:
-                anim_type, duration, start = "move", move_s, self._anim_start
+                anim_type, duration, anim_start = "move", move_s, start
             else:
-                anim_type, duration, start = "static", 0.0, self._anim_start
+                anim_type, duration, anim_start = "static", 0.0, start
+            end_time = max(end_time, anim_start + duration)
             self.animations.append({
                 "tile": tile, "type": anim_type,
-                "duration": duration, "start_time": start,
+                "duration": duration, "start_time": anim_start,
             })
+        self._anim_total = max(0.0001, end_time)
+
+    def animation_progress(self) -> float:
+        """整轮动画完成比例 (0~1)，未在动画时返回 1 / Overall animation progress"""
+        if not self.is_animating:
+            return 1.0
+        return min(1.0, self._anim_elapsed / self._anim_total)
+
+    def finish(self) -> None:
+        """立即定格当前动画（连击时避免视觉回跳）/ Snap ongoing animation to end"""
+        if self.is_animating:
+            for anim in self.animations:
+                anim["tile"].reset_animation()
+            self.animations = []
+            self.is_animating = False
 
     def update(self, dt: float) -> None:
         """更新动画 / Update animations"""
         if not self.is_animating:
             return
-        now = time.perf_counter()
+        self._anim_elapsed += dt
         for anim in self.animations:
-            if anim["duration"] > 0 and now - anim["start_time"] < anim["duration"]:
+            if anim["duration"] > 0 and self._anim_elapsed - anim["start_time"] < anim["duration"]:
                 return
         # 全部动画结束，重置方块动画状态
         self.is_animating = False
@@ -153,10 +193,9 @@ class BoardView:
 
     def draw(self, surface: pygame.Surface, board: GameBoard) -> None:
         """绘制棋盘 / Draw board"""
-        # 棋盘卡片阴影（iOS 风格：无边界 + 柔和投影）
-        draw_shadow_optimized(surface, self.board_rect, alpha=10, blur=10)
-        # 棋盘背景（缓存 blit）
-        draw_rounded_rect(surface, COLOR_BOARD_BG, self.board_rect, 20)
+        # 棋盘卡片：靛蓝辉光 + 玻璃卡片
+        draw_glow(surface, self.board_rect, (110, 96, 255), alpha=34, blur=16, radius=20)
+        draw_card(surface, self.board_rect, 20, bg=COLOR_BOARD_BG)
 
         # 空格子背景（缓存 blit）
         for row in range(BOARD_SIZE):
@@ -164,7 +203,7 @@ class BoardView:
                 rect = TileRenderer.get_tile_rect(row, col)
                 draw_rounded_rect(surface, COLOR_TILE_EMPTY, rect, 10)
 
-        now = time.perf_counter()
+        elapsed = self._anim_elapsed
         animating = self.is_animating
         for tile in board.get_all_tiles():
             anim = self._find_animation(tile) if animating else None
@@ -173,10 +212,9 @@ class BoardView:
                 TileRenderer.draw_tile(surface, tile)
                 continue
 
-            elapsed = now - anim["start_time"]
-            if elapsed <= 0:
+            if elapsed - anim["start_time"] <= 0:
                 continue  # 动画尚未开始（如 spawn 等待移动完成）
-            progress = min(1.0, elapsed / anim["duration"])
+            progress = min(1.0, (elapsed - anim["start_time"]) / anim["duration"])
             p = ease_out_cubic(progress)
 
             if anim["type"] == "move":
@@ -186,10 +224,10 @@ class BoardView:
                 TileRenderer.draw_tile(surface, tile, pos=(row_f, col_f))
             elif anim["type"] == "merge":
                 # 合并动画：轻微膨胀后回落（脉冲式，不越界闪烁）
-                scale = 1.0 + 0.12 * math.sin(progress * math.pi)
+                scale = 1.0 + 0.14 * math.sin(progress * math.pi)
                 TileRenderer.draw_tile(surface, tile, scale=scale)
             else:  # spawn
-                # 生成动画：从小弹出（轻微过冲，iOS spring 观感）
+                # 生成动画：从小弹出（轻微过冲，spring 观感）
                 scale = 0.3 + 0.7 * ease_out_back(progress)
                 TileRenderer.draw_tile(surface, tile, scale=scale)
 

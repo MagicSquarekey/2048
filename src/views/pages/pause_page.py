@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Function: 暂停页面 / Pause Page - 游戏暂停叠加层
+# @Function: 暂停页面 / Pause Page - 游戏暂停叠加层（深空霓虹主题）
 
 import pygame
 from typing import Optional, Any
@@ -8,13 +8,11 @@ from src.views.pages.base_page import Page
 from src.views.ui_components import Button, Label
 from src.views.sound_manager import get_sound_manager
 from src.config import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT,
-    COLOR_BTN_PRIMARY, COLOR_BTN_PRIMARY_HOVER,
-    COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
-    COLOR_OVERLAY, COLOR_BOARD_BG,
+    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_TEXT, COLOR_TEXT_SECONDARY,
+    COLOR_OVERLAY, CARD_BG, ACCENT_BLUE,
     FONT_SIZE_TITLE1, FONT_SIZE_BODY,
 )
-from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
+from src.utils import blit_background, blit_overlay, draw_card, draw_glow, get_font_manager
 
 
 class PausePage(Page):
@@ -28,40 +26,40 @@ class PausePage(Page):
         """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
         cy = WINDOW_HEIGHT // 2
-        btn_w, btn_h = 260, 48  # iOS 宽按钮, 8pt网格: 8×6=48
-        btn_gap = 64  # 8pt网格: 8×8=64
+        btn_w, btn_h = 260, 48
+        btn_gap = 64
 
-        # 标题 (iOS Title 1: 28pt)
         self.title = Label(
-            cx, cy - 100, "游戏暂停",
+            cx, cy - 104, "游戏暂停",
             font_size=FONT_SIZE_TITLE1, color=COLOR_TEXT, bold=True, centered=True,
         )
 
-        # 继续游戏按钮 (iOS Body: 17pt)
         self.btn_resume = Button(
-            cx - btn_w // 2, cy - 32, btn_w, btn_h, "继续游戏",
+            cx - btn_w // 2, cy - 40, btn_w, btn_h, "继续游戏",
             font_size=FONT_SIZE_BODY,
-            color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
+            color=ACCENT_BLUE, hover_color=(104, 178, 255),
             callback=lambda: self._set_result("resume"),
         )
 
-        # 重新开始按钮
         self.btn_restart = Button(
-            cx - btn_w // 2, cy - 32 + btn_gap, btn_w, btn_h, "重新开始",
+            cx - btn_w // 2, cy - 40 + btn_gap, btn_w, btn_h, "重新开始",
             font_size=FONT_SIZE_BODY,
-            color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            color=CARD_BG, hover_color=(66, 70, 116),
+            text_color=COLOR_TEXT_SECONDARY, style="ghost", shadow=False,
             callback=lambda: self._set_result("restart"),
         )
 
-        # 返回主菜单按钮
         self.btn_menu = Button(
-            cx - btn_w // 2, cy - 32 + btn_gap * 2, btn_w, btn_h, "返回主菜单",
+            cx - btn_w // 2, cy - 40 + btn_gap * 2, btn_w, btn_h, "返回主菜单",
             font_size=FONT_SIZE_BODY,
-            color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            color=CARD_BG, hover_color=(66, 70, 116),
+            text_color=COLOR_TEXT_SECONDARY, style="ghost", shadow=False,
             callback=lambda: self._set_result("menu"),
         )
 
         self._result: Optional[str] = None
+        self._panel_rect = pygame.Rect(0, 0, 340, 330)
+        self._panel_rect.center = (cx, cy)
 
     def _set_result(self, result: str) -> None:
         """设置操作结果 / Set operation result"""
@@ -76,7 +74,6 @@ class PausePage(Page):
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
         """处理事件 / Handle events"""
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            # ESC 直接恢复
             return "resume"
 
         self.btn_resume.handle_event(event)
@@ -91,18 +88,11 @@ class PausePage(Page):
 
     def draw(self, surface: pygame.Surface) -> None:
         """绘制暂停页面（半透明叠加层）/ Draw pause page (translucent overlay)"""
-        # 半透明遮罩
-        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
-        overlay.fill(COLOR_OVERLAY)
-        surface.blit(overlay, (0, 0))
+        blit_overlay(surface, COLOR_OVERLAY[3])
 
-        # 绘制暂停面板背景 (iOS 风格)
-        panel_w, panel_h = 320, 300
-        panel_x = (WINDOW_WIDTH - panel_w) // 2
-        panel_y = (WINDOW_HEIGHT - panel_h) // 2
-        draw_rounded_rect(surface, COLOR_BOARD_BG, (panel_x, panel_y, panel_w, panel_h), 16)
+        draw_glow(surface, self._panel_rect, ACCENT_BLUE, alpha=30, blur=16, radius=20)
+        draw_card(surface, self._panel_rect, 20)
 
-        # 绘制元素
         self.title.draw(surface)
         self.btn_resume.draw(surface)
         self.btn_restart.draw(surface)

@@ -52,3 +52,9 @@ private/
 # 临时文件
 *.tmp
 *.bak
+
+# Mimosa scan data
+.mimosa/
+
+# Test screenshots
+tests/screenshots/

@@ -65,24 +65,24 @@ class TestIOSColorSystemAcceptance(unittest.TestCase):
                 self.assertGreaterEqual(value, 0)
                 self.assertLessEqual(value, 255)
 
-        # 验证iOS系统颜色值
-        self.assertEqual(COLOR_BG, (242, 242, 247))  # iOS Gray 6
-        self.assertEqual(COLOR_BOARD_BG, (255, 255, 255))  # 纯白
-        self.assertEqual(COLOR_TILE_EMPTY, (230, 230, 235))  # iOS Gray 5
+        # 验证深空霓虹主题颜色值
+        self.assertEqual(COLOR_BG, (22, 24, 48))  # 深靛蓝渐变基底
+        self.assertEqual(COLOR_BOARD_BG, (32, 34, 64))  # 深色棋盘卡片
+        self.assertEqual(COLOR_TILE_EMPTY, (48, 51, 86))  # 深色空格
 
     def test_text_colors(self):
         """测试文字颜色配置"""
         # 验证主要文字颜色
-        self.assertEqual(COLOR_TEXT, (0, 0, 0))  # 纯黑
+        self.assertEqual(COLOR_TEXT, (245, 246, 252))  # 近白
 
-        # 验证次要文字颜色（优化后对比度≥4.5:1）
-        self.assertEqual(COLOR_TEXT_SECONDARY, (48, 48, 54))  # iOS Gray（优化后）
+        # 验证次要文字颜色
+        self.assertEqual(COLOR_TEXT_SECONDARY, (178, 182, 214))
 
-        # 验证第三级文字颜色（优化后对比度5.2:1）
-        self.assertEqual(COLOR_TEXT_TERTIARY, (100, 100, 108))
+        # 验证第三级文字颜色
+        self.assertEqual(COLOR_TEXT_TERTIARY, (132, 136, 170))
 
         # 验证第四级文字颜色
-        self.assertEqual(COLOR_TEXT_QUATERNARY, (142, 142, 147))
+        self.assertEqual(COLOR_TEXT_QUATERNARY, (102, 106, 140))
 
         # 验证对比度优化
         # COLOR_TEXT_TERTIARY (100,100,108) vs 背景 (242,242,247)
@@ -108,28 +108,28 @@ class TestIOSColorSystemAcceptance(unittest.TestCase):
 
     def test_button_colors(self):
         """测试按钮颜色配置"""
-        # 验证主要按钮颜色（iOS Blue）
-        self.assertEqual(COLOR_BTN_PRIMARY, (0, 122, 255))
-        self.assertEqual(COLOR_BTN_PRIMARY_HOVER, (10, 132, 255))
+        # 验证主要按钮颜色（霓虹蓝）
+        self.assertEqual(COLOR_BTN_PRIMARY, (72, 158, 255))
+        self.assertEqual(COLOR_BTN_PRIMARY_HOVER, (104, 178, 255))
 
-        # 验证次要按钮颜色
-        self.assertEqual(COLOR_BTN_SECONDARY, (242, 242, 247))
-        self.assertEqual(COLOR_BTN_SECONDARY_HOVER, (230, 230, 235))
+        # 验证次要按钮颜色（深色玻璃）
+        self.assertEqual(COLOR_BTN_SECONDARY, (52, 55, 94))
+        self.assertEqual(COLOR_BTN_SECONDARY_HOVER, (66, 70, 116))
 
-        # 验证危险按钮颜色（iOS Red）
-        self.assertEqual(COLOR_BTN_DANGER, (255, 59, 48))
-        self.assertEqual(COLOR_BTN_DANGER_HOVER, (255, 69, 58))
+        # 验证危险按钮颜色（霓虹红）
+        self.assertEqual(COLOR_BTN_DANGER, (255, 84, 96))
+        self.assertEqual(COLOR_BTN_DANGER_HOVER, (255, 112, 122))
 
     def test_system_colors(self):
         """测试iOS系统颜色"""
-        # 验证iOS系统颜色值
-        self.assertEqual(COLOR_GREEN, (52, 199, 89))  # iOS Green
-        self.assertEqual(COLOR_ORANGE, (255, 149, 0))  # iOS Orange
-        self.assertEqual(COLOR_TEAL, (90, 200, 250))  # iOS Teal
-        self.assertEqual(COLOR_INDIGO, (88, 86, 214))  # iOS Indigo
-        self.assertEqual(COLOR_PINK, (255, 45, 85))  # iOS Pink
-        self.assertEqual(COLOR_YELLOW, (255, 204, 0))  # iOS Yellow
-        self.assertEqual(COLOR_RED, (255, 59, 48))  # iOS Red
+        # 验证霓虹系统颜色值
+        self.assertEqual(COLOR_GREEN, (56, 220, 168))  # 霓虹绿
+        self.assertEqual(COLOR_ORANGE, (255, 152, 64))  # 霓虹橙
+        self.assertEqual(COLOR_TEAL, (80, 210, 250))  # 霓虹青
+        self.assertEqual(COLOR_INDIGO, (128, 100, 255))  # 霓虹紫
+        self.assertEqual(COLOR_PINK, (255, 90, 140))  # 霓虹粉
+        self.assertEqual(COLOR_YELLOW, (255, 208, 84))  # 霓虹金
+        self.assertEqual(COLOR_RED, (255, 84, 96))  # 霓虹红
 
     def test_tile_colors(self):
         """测试方块颜色配置"""
@@ -150,7 +150,7 @@ class TestIOSColorSystemAcceptance(unittest.TestCase):
         """测试遮罩颜色"""
         # 验证遮罩颜色格式（RGBA）
         self.assertEqual(len(COLOR_OVERLAY), 4)
-        self.assertEqual(COLOR_OVERLAY, (0, 0, 0, 40))  # iOS 更浅的遮罩
+        self.assertEqual(COLOR_OVERLAY, (8, 8, 24, 170))  # 深色遮罩
 
 
 class TestIOSFontSystemAcceptance(unittest.TestCase):
@@ -251,11 +251,11 @@ class TestIOSAnimationConfigAcceptance(unittest.TestCase):
             self.assertGreater(duration, 0)
             self.assertLessEqual(duration, 1000)  # 合理范围（毫秒）
 
-        # 验证动画时长值
-        self.assertEqual(ANIMATION_MOVE_DURATION, 250)
-        self.assertEqual(ANIMATION_MERGE_DURATION, 280)
-        self.assertEqual(ANIMATION_SPAWN_DURATION, 200)
-        self.assertEqual(ANIMATION_FADE_DURATION, 350)
+        # 验证动画时长值（偏快保证连击流畅）
+        self.assertEqual(ANIMATION_MOVE_DURATION, 120)
+        self.assertEqual(ANIMATION_MERGE_DURATION, 170)
+        self.assertEqual(ANIMATION_SPAWN_DURATION, 160)
+        self.assertEqual(ANIMATION_FADE_DURATION, 250)
 
     def test_spring_animation_params(self):
         """测试弹簧动画参数"""
@@ -270,8 +270,8 @@ class TestIOSAnimationConfigAcceptance(unittest.TestCase):
         self.assertLessEqual(SPRING_FREQUENCY, 10.0)  # 合理范围
 
         # 验证弹簧参数值
-        self.assertEqual(SPRING_DAMPING, 0.75)
-        self.assertEqual(SPRING_FREQUENCY, 2.5)
+        self.assertEqual(SPRING_DAMPING, 0.85)
+        self.assertEqual(SPRING_FREQUENCY, 1.8)
 
     def test_spring_animation_function(self):
         """测试弹簧动画函数"""
@@ -445,8 +445,8 @@ class TestIOSVisualRenderingAcceptance(unittest.TestCase):
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 
     def tearDown(self):
-        """测试清理"""
-        pygame.quit()
+        """测试清理（不退出 pygame，避免污染后续测试的显示模块）"""
+        pass
 
     def test_background_rendering(self):
         """测试背景渲染"""

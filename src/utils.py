@@ -10,6 +10,8 @@ from src.config import (
     WINDOW_WIDTH, WINDOW_HEIGHT, FONT_PATH,
     FONT_SIZE_LARGE, FONT_SIZE_MEDIUM, FONT_SIZE_SMALL, FONT_SIZE_TINY,
     COLOR_OVERLAY,
+    BG_GRADIENT_TOP, BG_GRADIENT_BOTTOM, BG_GLOW_BLUE, BG_GLOW_PURPLE,
+    CARD_BG, CARD_BORDER,
 )
 
 
@@ -113,6 +115,196 @@ def draw_rounded_rect(
     surface.blit(cached, rect.topleft)
 
 
+# ========== 深空霓虹主题：背景 / 卡片 / 辉光（全部缓存） ==========
+
+class BackgroundCache:
+    """整窗渐变背景缓存 - 启动后只渲染一次 / Full-window gradient background, rendered once"""
+    _surface: Optional[pygame.Surface] = None
+
+    @classmethod
+    def get_surface(cls) -> pygame.Surface:
+        if cls._surface is None:
+            w, h = WINDOW_WIDTH, WINDOW_HEIGHT
+            surf = pygame.Surface((w, h))
+            top, bottom = BG_GRADIENT_TOP, BG_GRADIENT_BOTTOM
+            for y in range(h):
+                t = y / max(1, h - 1)
+                color = (
+                    int(top[0] + (bottom[0] - top[0]) * t),
+                    int(top[1] + (bottom[1] - top[1]) * t),
+                    int(top[2] + (bottom[2] - top[2]) * t),
+                )
+                pygame.draw.line(surf, color, (0, y), (w, y))
+            # 两个大光斑（低alpha同心圆模拟径向光，一次性成本）
+            for center, radius, glow_color in (
+                ((int(w * 0.16), int(h * 0.10)), 300, BG_GLOW_BLUE),
+                ((int(w * 0.88), int(h * 0.95)), 340, BG_GLOW_PURPLE),
+            ):
+                glow = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+                steps = 24
+                for i in range(steps, 0, -1):
+                    r = int(radius * i / steps)
+                    alpha = int(26 * (1 - i / steps) ** 1.6)
+                    pygame.draw.circle(glow, (*glow_color, alpha), (radius, radius), r)
+                surf.blit(glow, (center[0] - radius, center[1] - radius))
+            cls._surface = surf
+        return cls._surface
+
+
+def blit_background(surface: pygame.Surface) -> None:
+    """绘制缓存的深空渐变背景 / Blit the cached gradient background"""
+    surface.blit(BackgroundCache.get_surface(), (0, 0))
+
+
+_overlay_cache: dict = {}
+
+
+def blit_overlay(
+    surface: pygame.Surface,
+    alpha: int = 150,
+    color: Tuple[int, int, int] = (8, 8, 24),
+) -> None:
+    """绘制缓存的全屏半透明遮罩 / Blit cached full-screen translucent overlay"""
+    key = (alpha, color)
+    overlay = _overlay_cache.get(key)
+    if overlay is None:
+        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((*color, alpha))
+        _overlay_cache[key] = overlay
+    surface.blit(overlay, (0, 0))
+
+
+class CardCache:
+    """玻璃卡片缓存（底色 + 1px 描边一次成型）/ Cached glass card (bg + border in one surface)"""
+    _cache: dict = {}
+    _max_cache_size = 256
+
+    @classmethod
+    def get_surface(
+        cls,
+        width: int,
+        height: int,
+        bg: Tuple[int, int, int],
+        border: Tuple[int, int, int],
+        radius: int,
+    ) -> pygame.Surface:
+        key = (width, height, bg, border, radius)
+        surface = cls._cache.get(key)
+        if surface is None:
+            if len(cls._cache) >= cls._max_cache_size:
+                cls._cache.clear()
+            surface = pygame.Surface((width, height), pygame.SRCALPHA)
+            pygame.draw.rect(surface, bg, (0, 0, width, height), border_radius=radius)
+            pygame.draw.rect(surface, border, (0, 0, width, height), width=1, border_radius=radius)
+            cls._cache[key] = surface
+        return surface
+
+
+def draw_card(
+    surface: pygame.Surface,
+    rect: pygame.Rect,
+    radius: int = 16,
+    bg: Tuple[int, int, int] = CARD_BG,
+    border: Tuple[int, int, int] = CARD_BORDER,
+    draw_border: bool = True,
+) -> None:
+    """绘制深色玻璃卡片（缓存 blit）/ Draw dark glass card (cached)"""
+    border_color = border if draw_border else bg
+    cached = CardCache.get_surface(rect.width, rect.height, bg, border_color, radius)
+    surface.blit(cached, rect.topleft)
+
+
+class GlowCache:
+    """彩色辉光缓存（霓虹元素底部光晕）/ Cached colored glow for neon elements"""
+    _cache: dict = {}
+    _max_cache_size = 128
+
+    @classmethod
+    def get_surface(
+        cls,
+        width: int,
+        height: int,
+        color: Tuple[int, int, int],
+        alpha: int,
+        blur: int,
+        radius: int,
+    ) -> pygame.Surface:
+        key = (width, height, color, alpha, blur, radius)
+        surface = cls._cache.get(key)
+        if surface is None:
+            if len(cls._cache) >= cls._max_cache_size:
+                cls._cache.clear()
+            total_w, total_h = width + blur * 2, height + blur * 2
+            surface = pygame.Surface((total_w, total_h), pygame.SRCALPHA)
+            for i in range(blur, 0, -1):
+                layer_alpha = int(alpha * (1 - i / (blur + 1)) ** 1.5)
+                layer_rect = pygame.Rect(blur - i, blur - i, width + i * 2, height + i * 2)
+                pygame.draw.rect(surface, (*color, layer_alpha), layer_rect, border_radius=radius + i)
+            cls._cache[key] = surface
+        return surface
+
+
+def draw_glow(
+    surface: pygame.Surface,
+    rect: pygame.Rect,
+    color: Tuple[int, int, int],
+    alpha: int = 46,
+    blur: int = 14,
+    radius: int = 16,
+) -> None:
+    """绘制柔和彩色辉光（缓存 blit）/ Draw soft colored glow (cached)"""
+    glow = GlowCache.get_surface(rect.width, rect.height, color, alpha, blur, radius)
+    surface.blit(glow, (rect.x - blur, rect.y - blur))
+
+
+class GradientRectCache:
+    """垂直渐变圆角矩形缓存（按钮/主视觉）/ Cached vertical-gradient rounded rect"""
+    _cache: dict = {}
+    _max_cache_size = 128
+
+    @classmethod
+    def get_surface(
+        cls,
+        width: int,
+        height: int,
+        top_color: Tuple[int, int, int],
+        bottom_color: Tuple[int, int, int],
+        radius: int,
+    ) -> pygame.Surface:
+        key = (width, height, top_color, bottom_color, radius)
+        surface = cls._cache.get(key)
+        if surface is None:
+            if len(cls._cache) >= cls._max_cache_size:
+                cls._cache.clear()
+            grad = pygame.Surface((width, height), pygame.SRCALPHA)
+            for y in range(height):
+                t = y / max(1, height - 1)
+                color = (
+                    int(top_color[0] + (bottom_color[0] - top_color[0]) * t),
+                    int(top_color[1] + (bottom_color[1] - top_color[1]) * t),
+                    int(top_color[2] + (bottom_color[2] - top_color[2]) * t),
+                )
+                pygame.draw.line(grad, color, (0, y), (width, y))
+            # 用圆角矩形蒙版裁出圆角
+            mask = pygame.Surface((width, height), pygame.SRCALPHA)
+            pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, width, height), border_radius=radius)
+            grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
+            cls._cache[key] = surface = grad
+        return surface
+
+
+def draw_gradient_rounded_rect(
+    surface: pygame.Surface,
+    rect: pygame.Rect,
+    top_color: Tuple[int, int, int],
+    bottom_color: Tuple[int, int, int],
+    radius: int = 12,
+) -> None:
+    """绘制垂直渐变圆角矩形（缓存 blit）/ Draw vertical gradient rounded rect (cached)"""
+    cached = GradientRectCache.get_surface(rect.width, rect.height, top_color, bottom_color, radius)
+    surface.blit(cached, rect.topleft)
+
+
 def draw_text_centered(
     surface: pygame.Surface,
     text: str,
@@ -165,6 +357,10 @@ def ease_in_out_cubic(t: float) -> float:
 
 def ease_out_back(t: float) -> float:
     """弹性缓出动画曲线 / Ease-out back animation curve"""
+    if t <= 0:
+        return 0.0
+    if t >= 1:
+        return 1.0
     c1 = 1.70158
     c3 = c1 + 1
     return 1 + c3 * (t - 1) ** 3 + c1 * (t - 1) ** 2
@@ -206,8 +402,13 @@ def get_tile_color(value: int):
     from src.config import TILE_COLORS
     if value in TILE_COLORS:
         return TILE_COLORS[value]
-    # 超过 2048 的方块使用金色
-    return ((237, 194, 46), (249, 246, 242))
+    # 超过 2048 的方块使用霓虹金
+    return ((255, 196, 40), (40, 32, 8))
+
+
+def lighten(color: Tuple[int, int, int], factor: float) -> Tuple[int, int, int]:
+    """提亮颜色（factor>1 变亮，<1 变暗）/ Lighten (factor>1) or darken (factor<1) a color"""
+    return tuple(min(255, max(0, int(c * factor))) for c in color)
 
 
 # ========== iOS 弹簧动画曲线 ==========

@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
-# @Function: 设置页面 / Settings page
+# @Function: 设置页面 / Settings page - 深空霓虹主题
 
 import pygame
 from typing import Optional, Any
 
 from src.views.pages.base_page import Page
-from src.views.ui_components import Button, Label, Panel, iOSAlert, iOSSwitch
+from src.views.ui_components import Button, Label, iOSAlert, iOSSwitch
 from src.models.data_manager import DataManager
 from src.config import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT,
-    COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
-    COLOR_BTN_PRIMARY, COLOR_BTN_PRIMARY_HOVER,
-    COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
-    COLOR_BTN_DANGER, COLOR_BTN_DANGER_HOVER,
-    COLOR_GREEN, COLOR_OVERLAY, COLOR_BOARD_BG,
-    FONT_SIZE_TITLE1, FONT_SIZE_BODY, FONT_SIZE_FOOTNOTE,
+    WINDOW_WIDTH, COLOR_TEXT, COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
+    COLOR_BTN_DANGER, CARD_BG, CARD_BORDER,
+    FONT_SIZE_TITLE1, FONT_SIZE_BODY,
 )
-from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
+from src.utils import (
+    blit_background, draw_card, draw_text_centered, get_font_manager, point_in_rect,
+)
 from src.i18n import t, set_language, get_language
+
+ROW_HEIGHT = 52
 
 
 class SettingsPage(Page):
@@ -28,131 +28,109 @@ class SettingsPage(Page):
         self._init_ui()
 
     def _init_ui(self) -> None:
-        """初始化 UI - iOS表单列表样式"""
+        """初始化 UI - 表单卡片布局"""
         cx = WINDOW_WIDTH // 2
 
-        # 标题 (iOS Title 1: 28pt)
-        self.title_label = Label(cx, 40, t("settings"), font_size=FONT_SIZE_TITLE1, color=COLOR_TEXT,
-                                bold=True, centered=True)
+        self.title_label = Label(cx, 44, t("settings"), font_size=FONT_SIZE_TITLE1,
+                                 color=COLOR_TEXT, bold=True, centered=True)
 
-        # 设置面板 - iOS表单列表样式
-        panel_w, panel_h = 400, 400
+        # 设置卡片：3 行 + 2 按钮，高度贴合内容
+        panel_w = 420
+        panel_h = 20 + ROW_HEIGHT * 3 + 18 + 46 + 12 + 46 + 22
         panel_x = cx - panel_w // 2
-        panel_y = 90
-        self.panel = Panel(panel_x, panel_y, panel_w, panel_h, COLOR_BOARD_BG, radius=16)
+        panel_y = 104
+        self.panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
 
-        # iOS表单列表布局参数
-        row_height = 44  # iOS标准行高
-        padding_left = 20
-        padding_right = 20
-        separator_y = panel_y + row_height  # 分隔线位置
+        padding = 22
+        row1_y = panel_y + 8
+        row2_y = row1_y + ROW_HEIGHT
+        row3_y = row2_y + ROW_HEIGHT
 
-        # === 第一组：音效和音乐开关 ===
-        group1_y = panel_y
-
-        # 音效 - 左文字+右控件
-        self.sound_label = Label(
-            panel_x + padding_left, group1_y + 13,
-            t("sound"), font_size=FONT_SIZE_BODY, color=COLOR_TEXT
-        )
+        # 音效
+        self.sound_label = Label(panel_x + padding, row1_y + 14,
+                                 t("sound"), font_size=FONT_SIZE_BODY, color=COLOR_TEXT)
         self.btn_sound = iOSSwitch(
-            panel_x + panel_w - padding_right - 51, group1_y + 7,
+            panel_x + panel_w - padding - 51, row1_y + 10,
             51, 31, is_on=True, callback=self._on_toggle_sound,
         )
 
-        # 分隔线1
-        self.separator1_y = group1_y + row_height
-
-        # 音乐 - 左文字+右控件
-        self.music_label = Label(
-            panel_x + padding_left, group1_y + row_height + 13,
-            t("music"), font_size=FONT_SIZE_BODY, color=COLOR_TEXT
-        )
+        # 音乐
+        self.music_label = Label(panel_x + padding, row2_y + 14,
+                                 t("music"), font_size=FONT_SIZE_BODY, color=COLOR_TEXT)
         self.btn_music = iOSSwitch(
-            panel_x + panel_w - padding_right - 51, group1_y + row_height + 7,
+            panel_x + panel_w - padding - 51, row2_y + 10,
             51, 31, is_on=True, callback=self._on_toggle_music,
         )
 
-        # 分隔线2
-        self.separator2_y = group1_y + row_height * 2
+        # 语言（整行可点击切换）
+        self.lang_label = Label(panel_x + padding, row3_y + 14,
+                                t("language"), font_size=FONT_SIZE_BODY, color=COLOR_TEXT)
+        self.lang_value = Label(0, 0, get_language().upper(), font_size=FONT_SIZE_BODY,
+                                color=COLOR_TEXT_SECONDARY)
+        self.lang_row_rect = pygame.Rect(panel_x, row3_y, panel_w, ROW_HEIGHT)
+        self._update_lang_value_pos()
 
-        # === 第二组：语言切换 ===
-        group2_y = group1_y + row_height * 2
-        lang = get_language()
-        self.lang_label = Label(
-            panel_x + padding_left, group2_y + 13,
-            t("language"), font_size=FONT_SIZE_BODY, color=COLOR_TEXT
-        )
-        self.lang_value = Label(
-            panel_x + panel_w - padding_right - 60, group2_y + 13,
-            lang.upper(), font_size=FONT_SIZE_BODY, color=COLOR_TEXT_SECONDARY
-        )
-
-        # 分隔线3
-        self.separator3_y = group2_y + row_height
-
-        # === 第三组：重置数据 ===
-        group3_y = group2_y + row_height
+        # 操作按钮
+        btn_y = row3_y + ROW_HEIGHT + 18
         self.btn_reset = Button(
-            panel_x + padding_left, group3_y + 4,
-            panel_w - padding_left * 2, 36,
+            panel_x + padding, btn_y, panel_w - padding * 2, 46,
             t("reset_data"), font_size=FONT_SIZE_BODY,
-            color=COLOR_BTN_DANGER, hover_color=COLOR_BTN_DANGER_HOVER,
+            color=COLOR_BTN_DANGER, hover_color=(255, 112, 122),
             callback=self._on_reset,
         )
-
-        # 分隔线4
-        self.separator4_y = group3_y + row_height
-
-        # === 第四组：返回按钮 ===
-        group4_y = group3_y + row_height
         self.btn_back = Button(
-            panel_x + padding_left, group4_y + 4,
-            panel_w - padding_left * 2, 36,
+            panel_x + padding, btn_y + 58, panel_w - padding * 2, 46,
             t("back_to_menu"), font_size=FONT_SIZE_BODY,
-            color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
-            text_color=(255, 255, 255),  # 白色文字，确保对比度
+            color=CARD_BG, hover_color=(66, 70, 116),
+            text_color=COLOR_TEXT_SECONDARY, style="ghost", shadow=False,
             callback=self._on_back,
         )
 
-        # 组件列表
+        # 行分隔线位置（卡片内）
+        self._separator_ys = [row1_y + ROW_HEIGHT, row2_y + ROW_HEIGHT]
+
         self.buttons = [self.btn_reset, self.btn_back]
         self.switches = [self.btn_sound, self.btn_music]
         self.labels = [self.sound_label, self.music_label, self.lang_label, self.lang_value]
         self._target_page = None
 
-        # iOS Alert 弹窗
+        # 重置确认弹窗
         self.alert = iOSAlert(
             title="确认重置",
-            message="确认要重置所有数据吗？",
-            confirm_text="确认重置",
+            message=t("confirm_reset"),
+            confirm_text=t("reset_data"),
             cancel_text=t("cancel"),
             on_confirm=self._on_confirm_reset,
             on_cancel=self._on_cancel_reset,
         )
 
+    def _update_lang_value_pos(self) -> None:
+        """语言值靠右对齐 / Align language value to the right"""
+        rect = self.lang_row_rect
+        self.lang_value.set_position(
+            rect.right - 22 - self.lang_value.rect.width,
+            rect.y + (rect.height - self.lang_value.rect.height) // 2,
+        )
+
     def _on_toggle_sound(self, is_on: bool) -> None:
         """切换音效 / Toggle sound"""
-        dm = DataManager()
-        dm.update_setting("sound_enabled", is_on)
+        DataManager().update_setting("sound_enabled", is_on)
 
     def _on_toggle_music(self, is_on: bool) -> None:
         """切换音乐 / Toggle music"""
-        dm = DataManager()
-        dm.update_setting("music_enabled", is_on)
+        DataManager().update_setting("music_enabled", is_on)
 
     def _on_toggle_lang(self) -> None:
         """切换语言 / Toggle language"""
         current = get_language()
         new_lang = "en" if current == "zh" else "zh"
         set_language(new_lang)
-        # 更新语言显示
         self.lang_value.text = new_lang.upper()
-        # 刷新标签文本
         self.sound_label.text = t("sound")
         self.music_label.text = t("music")
-        # 刷新标题
+        self.lang_label.text = t("language")
         self.title_label.text = t("settings")
+        self._update_lang_value_pos()
 
     def _on_reset(self) -> None:
         """重置数据 / Reset data"""
@@ -160,8 +138,7 @@ class SettingsPage(Page):
 
     def _on_confirm_reset(self) -> None:
         """确认重置 / Confirm reset"""
-        dm = DataManager()
-        dm.reset_data()
+        DataManager().reset_data()
         self._load_settings()
 
     def _on_cancel_reset(self) -> None:
@@ -176,22 +153,18 @@ class SettingsPage(Page):
         """加载设置 / Load settings"""
         dm = DataManager()
         settings = dm.get_settings()
-        
-        # 更新开关状态
+
         sound_enabled = settings.get("sound_enabled", True)
         music_enabled = settings.get("music_enabled", True)
-        
-        self.btn_sound.is_on = sound_enabled
-        self.btn_sound._target_x = self.btn_sound.rect.x + 2 if not sound_enabled else self.btn_sound.rect.x + self.btn_sound.rect.width - 29
-        self.btn_sound._thumb_x = self.btn_sound._target_x
-        
-        self.btn_music.is_on = music_enabled
-        self.btn_music._target_x = self.btn_music.rect.x + 2 if not music_enabled else self.btn_music.rect.x + self.btn_music.rect.width - 29
-        self.btn_music._thumb_x = self.btn_music._target_x
-        
-        # 更新语言显示
-        lang = get_language()
-        self.lang_value.text = lang.upper()
+
+        for switch, enabled in ((self.btn_sound, sound_enabled), (self.btn_music, music_enabled)):
+            switch.is_on = enabled
+            switch._target_x = switch.rect.x + 2 if not enabled else \
+                switch.rect.x + switch.rect.width - 29
+            switch._thumb_x = switch._target_x
+
+        self.lang_value.text = get_language().upper()
+        self._update_lang_value_pos()
 
     def on_enter(self, **kwargs: Any) -> None:
         """进入页面 / Enter page"""
@@ -201,30 +174,29 @@ class SettingsPage(Page):
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
         """处理事件 / Handle event"""
-        # 处理 Alert 事件
         if self.alert.handle_event(event):
             return None
 
-        # 处理按钮事件
+        # 语言行点击切换
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if point_in_rect(event.pos, self.lang_row_rect):
+                self._on_toggle_lang()
+                return None
+
         for btn in self.buttons:
             btn.handle_event(event)
-        
-        # 处理开关事件
         for switch in self.switches:
             switch.handle_event(event)
-        
+
         return None
 
     def update(self, dt: float) -> Optional[str]:
         """更新 / Update"""
-        # 更新按钮
         for btn in self.buttons:
             btn.update(dt)
-        
-        # 更新开关
         for switch in self.switches:
             switch.update(dt)
-        
+
         if self._target_page:
             target = self._target_page
             self._target_page = None
@@ -232,39 +204,28 @@ class SettingsPage(Page):
         return None
 
     def draw(self, surface: pygame.Surface) -> None:
-        """绘制设置页面 - iOS表单列表样式"""
-        surface.fill(COLOR_BG)
+        """绘制设置页面 / Draw settings page"""
+        blit_background(surface)
 
-        # 标题
         self.title_label.draw(surface)
+        draw_card(surface, self.panel_rect, 20)
 
-        # 面板
-        self.panel.draw(surface)
+        # 分隔线
+        for sep_y in self._separator_ys:
+            pygame.draw.line(surface, CARD_BORDER,
+                             (self.panel_rect.x + 22, sep_y),
+                             (self.panel_rect.right - 22, sep_y), width=1)
 
-        # 绘制iOS风格分隔线（浅灰色，左对齐）
-        separator_color = (209, 209, 214)  # iOS Gray
-        panel_x = self.panel.rect.x
-        panel_w = self.panel.rect.width
-        
-        for sep_y in [self.separator1_y, self.separator2_y, self.separator3_y]:
-            pygame.draw.line(
-                surface, separator_color,
-                (panel_x + 20, sep_y),
-                (panel_x + panel_w - 20, sep_y),
-                width=1
-            )
+        # 语言行右侧提示可点击
+        font_hint = get_font_manager().get_tiny()
+        draw_text_centered(surface, "点击切换", font_hint, COLOR_TEXT_TERTIARY,
+                           (self.panel_rect.right - 88, self.lang_row_rect.centery))
 
-        # 标签
         for label in self.labels:
             label.draw(surface)
-
-        # 开关
         for switch in self.switches:
             switch.draw(surface)
-
-        # 按钮
         for btn in self.buttons:
             btn.draw(surface)
 
-        # iOS Alert 弹窗
         self.alert.draw(surface)

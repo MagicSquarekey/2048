@@ -27,7 +27,7 @@ from src.config import (
     COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
     COLOR_BTN_DANGER, COLOR_BTN_DANGER_HOVER,
     COLOR_GREEN, COLOR_ORANGE,
-    COLOR_SCORE_BG, COLOR_OVERLAY,
+    COLOR_SCORE_BG, COLOR_OVERLAY, CARD_BG,
     SWIPE_THRESHOLD,
     INITIAL_TILES, WIN_TILE, UNDO_LIMIT_DEFAULT, CLEAN_LIMIT_DEFAULT,
     TILE_2_PROBABILITY,
@@ -86,17 +86,18 @@ class TestiOSColorSystem(unittest.TestCase):
     """iOS 颜色系统 - 验证所有颜色常量符合 Apple HIG"""
 
     def test_bg_color_is_ios_gray6(self):
-        """TC-001.01: 背景色应为 iOS System Gray 6 (约 242,242,247)"""
+        """TC-001.01: 背景色应为深空霓虹深色基底 (深靛蓝)"""
         self.assertTrue(is_valid_rgb(COLOR_BG))
         r, g, b = COLOR_BG
-        self.assertGreaterEqual(r, 235, "背景色R值应 ≥ 235 (iOS Gray 6)")
-        self.assertGreaterEqual(g, 235, "背景色G值应 ≥ 235 (iOS Gray 6)")
-        self.assertGreaterEqual(b, 235, "背景色B值应 ≥ 235 (iOS Gray 6)")
+        self.assertLessEqual(r, 80, "背景色R值应 ≤ 80 (深色主题)")
+        self.assertLessEqual(g, 80, "背景色G值应 ≤ 80 (深色主题)")
+        self.assertLessEqual(b, 120, "背景色B值应 ≤ 120 (深靛蓝)")
 
     def test_board_bg_is_white(self):
-        """TC-001.02: 棋盘背景应为纯白"""
+        """TC-001.02: 棋盘背景应为深色卡片"""
         self.assertTrue(is_valid_rgb(COLOR_BOARD_BG))
-        self.assertEqual(COLOR_BOARD_BG, (255, 255, 255))
+        r, g, b = COLOR_BOARD_BG
+        self.assertLessEqual(max(r, g, b), 90, "棋盘背景应为深色")
 
     def test_tile_empty_color_exists(self):
         """TC-001.03: 空格颜色存在且有效"""
@@ -135,21 +136,22 @@ class TestiOSColorSystem(unittest.TestCase):
         self.assertTrue(is_valid_rgb(COLOR_BTN_DANGER_HOVER))
 
     def test_primary_button_is_ios_blue(self):
-        """TC-001.08: 主按钮应为 iOS Blue (0,122,255)"""
-        self.assertEqual(COLOR_BTN_PRIMARY, (0, 122, 255))
+        """TC-001.08: 主按钮应为霓虹蓝 (72,158,255)"""
+        self.assertEqual(COLOR_BTN_PRIMARY, (72, 158, 255))
 
     def test_danger_button_is_ios_red(self):
-        """TC-001.09: 危险按钮应为 iOS Red (255,59,48)"""
-        self.assertEqual(COLOR_BTN_DANGER, (255, 59, 48))
+        """TC-001.09: 危险按钮应为霓虹红 (255,84,96)"""
+        self.assertEqual(COLOR_BTN_DANGER, (255, 84, 96))
 
     def test_green_is_ios_green(self):
-        """TC-001.10: 绿色应为 iOS Green (52,199,89)"""
-        self.assertEqual(COLOR_GREEN, (52, 199, 89))
+        """TC-001.10: 绿色应为霓虹绿 (56,220,168)"""
+        self.assertEqual(COLOR_GREEN, (56, 220, 168))
 
     def test_overlay_is_translucent(self):
-        """TC-001.11: 遮罩应为半透明"""
+        """TC-001.11: 遮罩应为半透明深色（足够压暗以保证前景可读）"""
         self.assertEqual(len(COLOR_OVERLAY), 4, "遮罩应为 RGBA 格式")
-        self.assertLess(COLOR_OVERLAY[3], 100, "遮罩透明度应较低 (半透明)")
+        self.assertGreaterEqual(COLOR_OVERLAY[3], 120, "遮罩应足够深 (保证弹窗可读)")
+        self.assertLessEqual(COLOR_OVERLAY[3], 220, "遮罩不应完全不透明")
 
     def test_score_bg_color_distinct(self):
         """TC-001.12: 分数背景色应与页面背景区分"""
@@ -247,8 +249,8 @@ class TestiOSAnimationSystem(unittest.TestCase):
     """iOS 动画系统 - 验证弹簧动画参数"""
 
     def test_move_duration_reasonable(self):
-        """TC-003.01: 移动动画时长 150-400ms"""
-        self.assertGreaterEqual(ANIMATION_MOVE_DURATION, 150)
+        """TC-003.01: 移动动画时长 80-400ms（偏快保证连击流畅）"""
+        self.assertGreaterEqual(ANIMATION_MOVE_DURATION, 80)
         self.assertLessEqual(ANIMATION_MOVE_DURATION, 400)
 
     def test_merge_duration_reasonable(self):
@@ -287,13 +289,12 @@ class TestiOSAnimationSystem(unittest.TestCase):
         self.assertAlmostEqual(val, 1.0, delta=0.15)
 
     def test_spring_animation_monotonic_region(self):
-        """TC-003.09: 弹簧动画在 t=0.3~0.8 区间应持续增长"""
-        prev = ease_out_spring(0.3)
-        for t_val in [0.4, 0.5, 0.6, 0.7, 0.8]:
+        """TC-003.09: 弹簧动画允许超调，但幅度应有界且收敛"""
+        for t_val in [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
             current = ease_out_spring(t_val)
-            self.assertGreaterEqual(current, prev - 0.05,
-                f"弹簧动画在 t={t_val} 处不应大幅下降")
-            prev = current
+            self.assertGreaterEqual(current, -0.05, f"弹簧动画在 t={t_val} 不应为负")
+            self.assertLessEqual(current, 1.3, f"弹簧动画在 t={t_val} 超调应有界")
+        self.assertAlmostEqual(ease_out_spring(1.0), 1.0, delta=0.15, msg="弹簧动画应收敛于 1")
 
     def test_ease_out_cubic_at_endpoints(self):
         """TC-003.10: 缓出三次方曲线端点正确"""
@@ -555,11 +556,11 @@ class TestUIComponents(unittest.TestCase):
         self.assertEqual(panel.rect.height, 200)
 
     def test_panel_default_style(self):
-        """TC-006.15: 面板默认 iOS 样式"""
+        """TC-006.15: 面板默认深色玻璃卡片样式"""
         panel = Panel(0, 0, 300, 200)
-        self.assertEqual(panel.color, (255, 255, 255))  # 纯白
-        self.assertEqual(panel.radius, RADIUS_LG)  # iOS 大圆角
-        self.assertTrue(panel.shadow)
+        self.assertEqual(panel.color, CARD_BG)  # 深色卡片底
+        self.assertEqual(panel.radius, RADIUS_LG)  # 大圆角
+        self.assertTrue(panel.border_width > 0)  # 带描边
 
     def test_panel_draw_no_crash(self):
         """TC-006.16: 面板绘制无异常"""

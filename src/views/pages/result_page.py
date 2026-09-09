@@ -1,25 +1,20 @@
 # -*- coding: utf-8 -*-
-# @Function: 结算页面 / Result page - 游戏结束/获胜展示
+# @Function: 结算页面 / Result page - 游戏结束/获胜展示（深空霓虹主题）
 
 import pygame
 from typing import Optional, Any
 
 from src.views.pages.base_page import Page
-from src.views.ui_components import Button, Label, Panel
+from src.views.ui_components import Button, Label
 from src.config import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_BG, COLOR_TEXT,
-    COLOR_TEXT_SECONDARY, COLOR_TEXT_TERTIARY,
-    COLOR_BTN_PRIMARY, COLOR_BTN_PRIMARY_HOVER,
-    COLOR_BTN_SECONDARY, COLOR_BTN_SECONDARY_HOVER,
+    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_TEXT, COLOR_TEXT_SECONDARY,
+    COLOR_TEXT_TERTIARY, ACCENT_BLUE, ACCENT_GOLD, CARD_BG, CARD_BORDER,
     FONT_SIZE_TITLE1, FONT_SIZE_LARGE_TITLE, FONT_SIZE_SUBHEAD, FONT_SIZE_BODY,
 )
-from src.utils import draw_rounded_rect, draw_text_centered, get_font_manager
+from src.utils import (
+    blit_background, draw_card, draw_glow, draw_text_centered, get_font_manager,
+)
 from src.i18n import t
-
-# 优化后的结算页面颜色
-COLOR_SCORE_TITLE = (100, 100, 108)      # "最终得分" 标题 - 中灰色
-COLOR_SCORE_VALUE = (0, 0, 0)            # 得分数字 - 纯黑色，确保清晰可读
-COLOR_STAT_TEXT = (60, 60, 67)           # 统计信息 - 深灰色
 
 
 class ResultPage(Page):
@@ -33,53 +28,50 @@ class ResultPage(Page):
         """初始化 UI / Initialize UI"""
         cx = WINDOW_WIDTH // 2
 
-        # 结果面板 - 增加高度以容纳更好的布局
-        panel_w, panel_h = 380, 380
+        # 结果卡片
+        panel_w, panel_h = 400, 400
         panel_x = cx - panel_w // 2
         panel_y = 80
-        self.panel = Panel(panel_x, panel_y, panel_w, panel_h, (255, 255, 255), radius=16)
+        self.panel_rect = pygame.Rect(panel_x, panel_y, panel_w, panel_h)
 
-        # 标题 (iOS Title 1: 28pt) - 增加与顶部的间距
-        self.title_label = Label(cx, panel_y + 48, "", font_size=FONT_SIZE_TITLE1, color=COLOR_TEXT,
-                                bold=True, centered=True)
+        # 标题
+        self.title_label = Label(cx, panel_y + 46, "", font_size=FONT_SIZE_TITLE1,
+                                 color=COLOR_TEXT, bold=True, centered=True)
 
-        # 分隔线 - 视觉分隔标题和分数区域
-        self.separator_y = panel_y + 72
+        # 分数标签 + 大分数
+        self.score_title = Label(cx, panel_y + 96, t("final_score"),
+                                 font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_TERTIARY,
+                                 centered=True)
+        self.score_label = Label(cx, panel_y + 136, "0", font_size=44,
+                                 color=ACCENT_GOLD, bold=True, centered=True)
 
-        # 分数标签 "最终得分" (使用较浅的灰色)
-        self.score_title = Label(cx, panel_y + 96, t("final_score"), font_size=FONT_SIZE_SUBHEAD,
-                                color=COLOR_SCORE_TITLE, centered=True)
-
-        # 分数数字 (iOS Large Title: 34pt) - 使用纯黑色确保清晰可读
-        self.score_label = Label(cx, panel_y + 132, "0", font_size=FONT_SIZE_LARGE_TITLE,
-                                color=COLOR_SCORE_VALUE, bold=True, centered=True)
-
-        # 统计信息 - 增加与分数的间距
-        self.stats_y = panel_y + 192
+        # 统计信息（2×2 网格小卡片）
+        self.stats_y = panel_y + 186
         self.stat_labels = []
 
-        # 按钮 - 优化间距和位置
+        # 按钮
         btn_w, btn_h = 160, 48
-        btn_y = panel_y + panel_h - 76
-        btn_gap = 16  # 增加按钮间距
+        btn_y = panel_y + panel_h - 66
+        btn_gap = 16
 
         self.btn_retry = Button(
             cx - btn_w - btn_gap // 2, btn_y, btn_w, btn_h,
             t("play_again"), font_size=FONT_SIZE_BODY,
-            color=COLOR_BTN_PRIMARY, hover_color=COLOR_BTN_PRIMARY_HOVER,
             callback=self._on_retry,
         )
 
         self.btn_menu = Button(
             cx + btn_gap // 2, btn_y, btn_w, btn_h,
             t("back_to_menu"), font_size=FONT_SIZE_BODY,
-            color=COLOR_BTN_SECONDARY, hover_color=COLOR_BTN_SECONDARY_HOVER,
+            color=CARD_BG, hover_color=(66, 70, 116),
+            text_color=COLOR_TEXT_SECONDARY, style="ghost", shadow=False,
             callback=self._on_menu,
         )
 
         self.buttons = [self.btn_retry, self.btn_menu]
         self._target_page = None
         self._result_data = {}
+        self._is_win = False
 
     def _on_retry(self) -> None:
         """点击重试 / Click retry"""
@@ -102,16 +94,16 @@ class ResultPage(Page):
         if not data:
             return
 
-        # 标题
         is_win = data.get("is_win", False)
+        self._is_win = is_win
         self.title_label.set_text(t("you_win") if is_win else t("game_over"))
 
-        # 分数
         score = data.get("score", 0)
         self.score_label.set_text(str(score))
 
-        # 统计信息 - 优化间距和对齐
-        mode_names = {"classic": t("mode_classic"), "timed": t("mode_timed"), "challenge": t("mode_challenge")}
+        # 统计信息（2×2 网格）
+        mode_names = {"classic": t("mode_classic"), "timed": t("mode_timed"),
+                      "challenge": t("mode_challenge")}
         mode = mode_names.get(data.get("mode", "classic"), t("mode_classic"))
         max_tile = data.get("max_tile", 0)
         move_count = data.get("move_count", 0)
@@ -120,16 +112,12 @@ class ResultPage(Page):
         seconds = int(elapsed) % 60
 
         stats = [
-            f"{t('mode_label')}: {mode}",
-            f"{t('max_tile')}: {max_tile}",
-            f"{t('move_count')}: {move_count}",
-            f"{t('elapsed_time')}: {minutes:02d}:{seconds:02d}",
+            (t("max_tile"), str(max_tile)),
+            (t("move_count"), str(move_count)),
+            (t("mode_label"), mode),
+            (t("elapsed_time"), f"{minutes:02d}:{seconds:02d}"),
         ]
-
-        self.stat_labels = []
-        cx = WINDOW_WIDTH // 2
-        for i, stat in enumerate(stats):
-            self.stat_labels.append((stat, cx, self.stats_y + i * 28))  # 增加行间距到28px
+        self.stat_labels = stats
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
         """处理事件 / Handle event"""
@@ -149,27 +137,38 @@ class ResultPage(Page):
 
     def draw(self, surface: pygame.Surface) -> None:
         """绘制结算页面 / Draw result page"""
-        surface.fill(COLOR_BG)
+        blit_background(surface)
 
-        # 面板
-        self.panel.draw(surface)
+        rect = self.panel_rect
+        cx = WINDOW_WIDTH // 2
 
-        # 标题
+        # 卡片（胜利金色辉光 / 失败蓝色辉光）
+        draw_glow(surface, rect, ACCENT_GOLD if self._is_win else ACCENT_BLUE,
+                  alpha=34, blur=18, radius=20)
+        draw_card(surface, rect, 20)
+
         self.title_label.draw(surface)
 
-        # 分隔线 - 轻薄的灰色分隔线，增加视觉层次
-        sep_rect = pygame.Rect(self.panel.rect.x + 40, self.separator_y,
-                              self.panel.rect.width - 80, 1)
-        pygame.draw.rect(surface, (230, 230, 235), sep_rect)
-
-        # 分数
+        # 分数区
         self.score_title.draw(surface)
         self.score_label.draw(surface)
 
-        # 统计信息 - 使用优化后的颜色
-        font = get_font_manager().get_small()
-        for text, x, y in self.stat_labels:
-            draw_text_centered(surface, text, font, COLOR_STAT_TEXT, (x, y))
+        # 2×2 统计网格
+        grid_w, grid_h = 172, 52
+        grid_gap = 12
+        start_x = cx - (grid_w * 2 + grid_gap) // 2
+        for i, (title, value) in enumerate(self.stat_labels):
+            row, col = divmod(i, 2)
+            cell = pygame.Rect(start_x + col * (grid_w + grid_gap),
+                               self.stats_y + row * (grid_h + grid_gap),
+                               grid_w, grid_h)
+            draw_card(surface, cell, 12, bg=(32, 34, 62))
+            font_t = get_font_manager().get_tiny()
+            font_v = get_font_manager().get_font(17, bold=True)
+            draw_text_centered(surface, title, font_t, COLOR_TEXT_TERTIARY,
+                               (cell.centerx, cell.y + 13))
+            draw_text_centered(surface, value, font_v, COLOR_TEXT_SECONDARY,
+                               (cell.centerx, cell.y + 35))
 
         # 按钮
         for btn in self.buttons:

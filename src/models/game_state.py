@@ -82,13 +82,21 @@ class GameState:
         if self.state != self.STATE_PLAYING or not self.board:
             return
 
-        # 检查限时模式
+        # 检查限时模式：剩余时间随真实流逝递减
         if self.mode == "timed":
-            elapsed = self.get_elapsed_time()
-            self.time_remaining = max(0, int(self.board.score > 0 and self.target_score - self.board.score >= 0 and 
-                                              self._get_mode_config().get("time_limit", 60) - elapsed or 0))
+            limit = self._get_mode_config().get("time_limit", 60)
+            self.time_remaining = max(0, int(round(limit - self.get_elapsed_time())))
             if self.time_remaining <= 0:
                 self.state = self.STATE_GAME_OVER
+                return
+
+        # 检查挑战模式：步数用完判负 / 达到目标方块判胜
+        elif self.mode == "challenge":
+            if self.move_limit > 0 and self.board.move_count >= self.move_limit:
+                self.state = self.STATE_GAME_OVER
+                return
+            if self.target_tile and self.board.max_tile >= self.target_tile:
+                self.state = self.STATE_WIN
                 return
 
         # 检查棋盘状态
@@ -146,13 +154,18 @@ class GameState:
         """获取游戏结果 / Get game result"""
         if not self.board:
             return {}
+        # 挑战模式以目标方块为胜利条件，其余模式以 2048 为目标
+        if self.mode == "challenge" and self.target_tile:
+            is_win = self.board.max_tile >= self.target_tile
+        else:
+            is_win = self.board.is_won or (self.board.max_tile >= 2048)
         return {
             "mode": self.mode,
             "score": self.board.score,
             "max_tile": self.board.max_tile,
             "move_count": self.board.move_count,
             "elapsed_time": self.get_elapsed_time(),
-            "is_win": self.board.is_won or (self.board.max_tile >= 2048),
+            "is_win": is_win,
             "is_game_over": self.board.is_game_over,
         }
 
