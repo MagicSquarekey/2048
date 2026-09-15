@@ -850,7 +850,7 @@ class TestRegression(unittest.TestCase):
         gs.start_game("classic")
         self.assertEqual(gs.state, GameState.STATE_PLAYING)
         self.assertEqual(gs.mode, "classic")
-        self.assertEqual(gs.undo_count, 2)
+        self.assertEqual(gs.undo_count, UNDO_LIMIT_DEFAULT)
 
     def test_game_state_timed_mode(self):
         """TC-010.03: 计时模式正常"""
@@ -951,9 +951,9 @@ class TestRegression(unittest.TestCase):
         from src.i18n import t, set_language, get_language
 
         self.assertEqual(get_language(), "zh")
-        self.assertEqual(t("start_game"), "开始游戏")
+        self.assertEqual(t("mode_classic"), "经典模式")
         set_language("en")
-        self.assertEqual(t("start_game"), "Start Game")
+        self.assertEqual(t("mode_classic"), "Classic")
         set_language("zh")
 
     def test_achievements(self):

@@ -65,12 +65,15 @@ pump(2, "release")
 assert pm.current_page.name == "game", f"expected game, got {pm.current_page.name}"
 print("[ok] 进入游戏页")
 
-# 2. 单次按键移动
+# 2. 单次按键移动（初始布局随机，依次尝试方向直到棋盘变化）
 before = pm.current_page._game_state.board.move_count
-pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_LEFT))
-pump(30, "single move")  # 0.5s 真实时间，动画完成
+for key in (pygame.K_LEFT, pygame.K_UP, pygame.K_RIGHT, pygame.K_DOWN):
+    pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=key))
+    pump(30, "single move")  # 0.5s 真实时间，动画完成
+    if pm.current_page._game_state.board.move_count > before:
+        break
 after = pm.current_page._game_state.board.move_count
-assert after == before + 1, f"move_count {before} -> {after}"
+assert after > before, f"四个方向都无法移动? move_count {before} -> {after}"
 print(f"[ok] 单步移动成功 move_count={after}")
 
 # 3. 按住连发（按真实 set_repeat 间隔 110ms ≈ 7 帧发 KEYDOWN）

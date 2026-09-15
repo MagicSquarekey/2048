@@ -10,6 +10,7 @@ from unittest.mock import patch, MagicMock
 from src.models.board import GameBoard
 from src.models.tile import Tile
 from src.models.game_state import GameState
+from src.config import UNDO_LIMIT_DEFAULT
 from src.models.data_manager import DataManager
 from src.models.achievements import ACHIEVEMENTS, check_achievements
 
@@ -53,7 +54,7 @@ class TestUserScenario_StartGame(unittest.TestCase):
         # 棋盘应有2个初始方块
         tile_count = _count_tiles(gs.board)
         self.assertGreaterEqual(tile_count, 2)
-        self.assertEqual(gs.undo_count, 2)
+        self.assertEqual(gs.undo_count, UNDO_LIMIT_DEFAULT)
 
     def test_board_has_valid_initial_tiles(self):
         """初始方块值应为2或4"""
@@ -708,13 +709,13 @@ class TestUserScenario_I18n(unittest.TestCase):
     def test_translate_chinese(self):
         """中文翻译正确"""
         from src.i18n import t
-        self.assertEqual(t("start_game"), "开始游戏")
+        self.assertEqual(t("mode_classic"), "经典模式")
 
     def test_translate_english(self):
         """英文翻译正确"""
         from src.i18n import t, set_language
         set_language("en")
-        self.assertEqual(t("start_game"), "Start Game")
+        self.assertEqual(t("mode_classic"), "Classic")
         set_language("zh")  # 恢复
 
     def test_missing_key_returns_key(self):

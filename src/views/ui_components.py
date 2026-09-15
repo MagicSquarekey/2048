@@ -18,6 +18,42 @@ from src.utils import (
 )
 
 
+class _GlossCache:
+    """顶部光泽贴图缓存（按钮/卡片高光）/ Top-gloss surface cache"""
+    _cache: dict = {}
+    _max = 64
+
+    @classmethod
+    def get(cls, width: int, height: int, radius: int, alpha: int = 30) -> pygame.Surface:
+        key = (width, height, radius, alpha)
+        surf = cls._cache.get(key)
+        if surf is None:
+            if len(cls._cache) >= cls._max:
+                cls._cache.clear()
+            surf = pygame.Surface((width, height), pygame.SRCALPHA)
+            pygame.draw.rect(surf, (255, 255, 255, alpha), (0, 0, width, height),
+                             border_radius=radius)
+            # 底部以下补齐同色矩形，让下边缘不圆滑（光泽只圆上角观感）
+            surf.fill((255, 255, 255, 0))
+            pygame.draw.rect(surf, (255, 255, 255, alpha), (0, 0, width, height),
+                             border_radius=radius)
+            cls._cache[key] = surf
+        return surf
+
+    @classmethod
+    def draw_top_gloss(cls, surface: pygame.Surface, rect: pygame.Rect,
+                       radius: int, alpha: int = 30, fraction: float = 0.45) -> None:
+        """在 rect 上部绘制一层玻璃光泽 / Draw gloss on the top part of rect"""
+        h = max(2, int(rect.height * fraction))
+        surf = pygame.Surface((rect.width, h), pygame.SRCALPHA)
+        pygame.draw.rect(surf, (255, 255, 255, alpha), (0, 0, rect.width, h),
+                         border_radius=radius)
+        # 用小矩形填平光泽底部的两个圆角
+        pygame.draw.rect(surf, (255, 255, 255, alpha), (radius, h - radius,
+                                                        rect.width - radius * 2, radius))
+        surface.blit(surf, rect.topleft)
+
+
 class UIComponent:
     """UI 组件基类 / UI component base class"""
 
@@ -133,7 +169,7 @@ class Button(UIComponent):
 
         base = self._base_color()
         if self.style == "primary":
-            # 主按钮：彩色辉光 + 垂直渐变
+            # 主按钮：彩色辉光 + 垂直渐变 + 顶部光泽
             if self.shadow:
                 draw_glow(surface, draw_rect, base,
                           alpha=40 if not self.is_pressed else 18,
@@ -142,6 +178,7 @@ class Button(UIComponent):
             draw_gradient_rounded_rect(
                 surface, draw_rect, lighten(base, 1.22), base, self.radius,
             )
+            _GlossCache.draw_top_gloss(surface, draw_rect, self.radius, alpha=30)
         else:
             # ghost 按钮：玻璃卡片，悬停提亮
             bg = base if self.is_hovered else CARD_BG
@@ -298,14 +335,17 @@ class ScoreBox(UIComponent):
         # 数值同色微辉光 + 玻璃卡片
         draw_glow(surface, self.rect, self.value_color, alpha=22, blur=8, radius=RADIUS_MD)
         draw_card(surface, self.rect, RADIUS_MD, bg=self.bg_color)
+        # 顶部强调色饰条
+        bar_rect = pygame.Rect(self.rect.x + 14, self.rect.y + 4, self.rect.width - 28, 3)
+        draw_rounded_rect(surface, self.value_color, bar_rect, 1)
         # 标题
         font_sm = get_font_manager().get_small()
         draw_text_centered(surface, self.title, font_sm, self.title_color,
-                          (self.rect.centerx, self.rect.y + 16))
+                          (self.rect.centerx, self.rect.y + 18))
         # 数值
         font_lg = get_font_manager().get_large(bold=True)
         draw_text_centered(surface, str(self.value), font_lg, self.value_color,
-                          (self.rect.centerx, self.rect.y + 41))
+                          (self.rect.centerx, self.rect.y + 42))
 
 
 class iOSAlert(UIComponent):

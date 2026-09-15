@@ -118,12 +118,18 @@ def draw_rounded_rect(
 # ========== 深空霓虹主题：背景 / 卡片 / 辉光（全部缓存） ==========
 
 class BackgroundCache:
-    """整窗渐变背景缓存 - 启动后只渲染一次 / Full-window gradient background, rendered once"""
-    _surface: Optional[pygame.Surface] = None
+    """
+    整窗渐变背景缓存 / Full-window animated background
+
+    静态层：垂直渐变 + 四角暗角（vignette），启动后只渲染一次；
+    动态层：两团柔光沿缓慢利萨如轨迹漂移（随 pygame 时钟，无需页面传时间）。
+    """
+    _base: Optional[pygame.Surface] = None
+    _glows: list = []
 
     @classmethod
-    def get_surface(cls) -> pygame.Surface:
-        if cls._surface is None:
+    def _get_base(cls) -> pygame.Surface:
+        if cls._base is None:
             w, h = WINDOW_WIDTH, WINDOW_HEIGHT
             surf = pygame.Surface((w, h))
             top, bottom = BG_GRADIENT_TOP, BG_GRADIENT_BOTTOM
@@ -135,25 +141,60 @@ class BackgroundCache:
                     int(top[2] + (bottom[2] - top[2]) * t),
                 )
                 pygame.draw.line(surf, color, (0, y), (w, y))
-            # 两个大光斑（低alpha同心圆模拟径向光，一次性成本）
-            for center, radius, glow_color in (
-                ((int(w * 0.16), int(h * 0.10)), 300, BG_GLOW_BLUE),
-                ((int(w * 0.88), int(h * 0.95)), 340, BG_GLOW_PURPLE),
-            ):
+            # 四角暗角：同心圆环由外向内渐暗，增加纵深
+            vignette = pygame.Surface((w, h), pygame.SRCALPHA)
+            steps = 22
+            max_r = int(math.hypot(w, h) // 2) + 40
+            cx, cy = w // 2, h // 2
+            for i in range(steps):
+                t = i / steps                      # 0=外缘 1=中心
+                r = int(max_r * (1 - t * 0.72))
+                alpha = int(64 * (1 - t) ** 1.7)   # 越靠外越暗
+                if alpha <= 0:
+                    continue
+                pygame.draw.circle(vignette, (6, 6, 18, alpha), (cx, cy), r)
+            surf.blit(vignette, (0, 0))
+            cls._base = surf
+        return cls._base
+
+    @classmethod
+    def _get_glows(cls) -> list:
+        if not cls._glows:
+            for color, radius in ((BG_GLOW_BLUE, 250), (BG_GLOW_PURPLE, 290)):
                 glow = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-                steps = 24
+                steps = 22
                 for i in range(steps, 0, -1):
                     r = int(radius * i / steps)
-                    alpha = int(26 * (1 - i / steps) ** 1.6)
-                    pygame.draw.circle(glow, (*glow_color, alpha), (radius, radius), r)
-                surf.blit(glow, (center[0] - radius, center[1] - radius))
-            cls._surface = surf
-        return cls._surface
+                    alpha = int(34 * (1 - i / steps) ** 1.5)
+                    pygame.draw.circle(glow, (*color, alpha), (radius, radius), r)
+                cls._glows.append(glow)
+        return cls._glows
+
+    @classmethod
+    def get_surface(cls) -> pygame.Surface:
+        """兼容旧接口：返回静态合成背景 / Legacy static compose"""
+        surf = cls._get_base().copy()
+        w, h = WINDOW_WIDTH, WINDOW_HEIGHT
+        for glow, (fx, fy) in zip(cls._get_glows(), ((0.16, 0.10), (0.88, 0.95))):
+            r = glow.get_width() // 2
+            surf.blit(glow, (int(w * fx) - r, int(h * fy) - r))
+        return surf
 
 
-def blit_background(surface: pygame.Surface) -> None:
-    """绘制缓存的深空渐变背景 / Blit the cached gradient background"""
-    surface.blit(BackgroundCache.get_surface(), (0, 0))
+def blit_background(surface: pygame.Surface, t: float = None) -> None:
+    """绘制动态渐变背景（暗角 + 缓慢漂移的双色柔光）/ Animated gradient background"""
+    surface.blit(BackgroundCache._get_base(), (0, 0))
+    if t is None:
+        t = pygame.time.get_ticks() / 1000.0
+    w, h = WINDOW_WIDTH, WINDOW_HEIGHT
+    for glow, (fx, fy, sx, sy, px, py) in zip(
+        BackgroundCache._get_glows(),
+        ((0.16, 0.10, 0.045, 0.06, 0.9, 1.3), (0.88, 0.95, 0.05, 0.04, 1.2, 0.8)),
+    ):
+        r = glow.get_width() // 2
+        dx = int(math.sin(t * sx * math.tau / 10 + px) * 30)
+        dy = int(math.cos(t * sy * math.tau / 12 + py) * 24)
+        surface.blit(glow, (int(w * fx) - r + dx, int(h * fy) - r + dy))
 
 
 _overlay_cache: dict = {}

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Function: 主菜单页面 / Main menu page - 深空霓虹主题
 
+import math
+
 import pygame
 from typing import Optional, Any
 
@@ -10,7 +12,7 @@ from src.models.data_manager import DataManager
 from src.config import (
     WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_TEXT, COLOR_TEXT_SECONDARY,
     COLOR_TEXT_TERTIARY, ACCENT_BLUE, ACCENT_ORANGE,
-    CARD_BG, CARD_BG_LIGHT, CARD_BORDER,
+    CARD_BG, CARD_BG_LIGHT,
     MODE_CONFIG,
     FONT_SIZE_SUBHEAD, FONT_SIZE_BODY, FONT_SIZE_FOOTNOTE,
 )
@@ -29,8 +31,8 @@ class ModeCard:
         self.rect = pygame.Rect(x, y, w, h)
         self.accent = cfg["accent"]
         self.icon = cfg["icon"]
-        self.name = cfg["name"]
-        self.desc = cfg["description"]
+        self.name = t(cfg["name_key"])
+        self.desc = t(cfg["desc_key"])
         self.callback = callback
         self.is_hovered = False
         self.is_pressed = False
@@ -58,7 +60,7 @@ class ModeCard:
             draw_glow(surface, draw_rect, self.accent, alpha=30, blur=10, radius=16)
         draw_card(surface, draw_rect, 16, bg=bg)
 
-        # 图标贴片（模式强调色渐变圆角块）
+        # 图标贴片（模式强调色渐变圆角块 + 顶部光泽）
         icon_rect = pygame.Rect(r.x + 14, r.y + (r.height - 40) // 2 - offset, 40, 40)
         draw_gradient_rounded_rect(surface, icon_rect, lighten(self.accent, 1.2), self.accent, 12)
         font_icon = get_font_manager().get_font(17 if len(self.icon) > 2 else 19, bold=True)
@@ -72,11 +74,12 @@ class ModeCard:
         desc_surf = font_desc.render(self.desc, True, COLOR_TEXT_TERTIARY)
         surface.blit(desc_surf, (r.x + 77, r.y + 36 - offset))
 
-        # 右侧箭头
+        # 右侧箭头（悬停时向右轻移，引导点击）
         font_arrow = get_font_manager().get_font(20, bold=True)
+        nudge = 4 if self.is_hovered else 0
         draw_text_centered(surface, "›", font_arrow,
                            self.accent if self.is_hovered else COLOR_TEXT_TERTIARY,
-                           (r.right - 28, r.centery - offset))
+                           (r.right - 28 + nudge, r.centery - offset))
 
 
 class MenuPage(Page):
@@ -84,7 +87,9 @@ class MenuPage(Page):
 
     def __init__(self) -> None:
         super().__init__("menu")
+        self._t = 0.0  # 页面动画时钟
         self._init_ui()
+        self._init_decor()
 
     def _init_ui(self) -> None:
         """初始化 UI 元素 / Initialize UI elements"""
@@ -101,11 +106,11 @@ class MenuPage(Page):
         for i, v in enumerate(logo_values):
             x = start_x + i * (tile_s + tile_gap)
             y = 36 + (6 if i % 2 else 0)
-            self._logo_tiles.append((pygame.Rect(x, y, tile_s, tile_s), str(v), logo_colors[v]))
+            self._logo_tiles.append([pygame.Rect(x, y, tile_s, tile_s), str(v), logo_colors[v]])
 
         # 副标题
         self.subtitle_label = Label(
-            cx, 116, "挑战你的数字极限",
+            cx, 116, t("menu_subtitle"),
             font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_SECONDARY, centered=True,
         )
 
@@ -163,6 +168,23 @@ class MenuPage(Page):
         self.buttons = [self.btn_settings, self.btn_achievements]
         self._target_page = None
 
+    def _init_decor(self) -> None:
+        """背景幽灵方块装饰（低透明度，缓慢浮动）/ Faint ghost tiles for depth"""
+        self._ghosts = []
+        spec = [  # (数值, 颜色, 中心比例x, 中心比例y, 尺寸, 初始相位)
+            (2, (110, 114, 158), 0.10, 0.78, 64, 0.0),
+            (8, ACCENT_ORANGE, 0.92, 0.22, 56, 1.8),
+            (4, (140, 145, 196), 0.86, 0.72, 72, 3.6),
+        ]
+        for value, color, fx, fy, size, phase in spec:
+            surf = pygame.Surface((size, size), pygame.SRCALPHA)
+            pygame.draw.rect(surf, (*color, 26), (0, 0, size, size), border_radius=14)
+            pygame.draw.rect(surf, (*color, 44), (0, 0, size, size), width=2, border_radius=14)
+            font = get_font_manager().get_font(int(size * 0.44), bold=True)
+            text = font.render(str(value), True, (*color, 60))
+            surf.blit(text, text.get_rect(center=(size // 2, size // 2)))
+            self._ghosts.append((surf, fx, fy, phase))
+
     def _on_btn_click(self, action: str) -> None:
         """按钮点击回调 / Button click callback"""
         self._target_page = action
@@ -186,6 +208,7 @@ class MenuPage(Page):
 
     def update(self, dt: float) -> Optional[str]:
         """更新 / Update"""
+        self._t += dt
         self.best_box.update(dt)
         self.games_box.update(dt)
 
@@ -199,12 +222,22 @@ class MenuPage(Page):
         """绘制菜单页面 / Draw menu page"""
         blit_background(surface)
 
-        # Logo 贴片（辉光 + 渐变 + 悬浮数字）
+        # 背景幽灵方块（缓慢正弦浮动，营造纵深）
+        for surf, fx, fy, phase in self._ghosts:
+            bob = int(7 * math.sin(self._t * 0.5 + phase))
+            rect = surf.get_rect(center=(int(WINDOW_WIDTH * fx),
+                                         int(WINDOW_HEIGHT * fy) + bob))
+            surface.blit(surf, rect)
+
+        # Logo 贴片（辉光 + 渐变 + 悬浮数字，交替相位上下浮动）
         font_logo = get_font_manager().get_font(24, bold=True)
-        for rect, text, color in self._logo_tiles:
+        for i, (rect, text, color) in enumerate(self._logo_tiles):
+            bob = int(3 * math.sin(self._t * 1.6 + i * 0.9))
             draw_glow(surface, rect, color, alpha=34, blur=8, radius=12)
             draw_gradient_rounded_rect(surface, rect, lighten(color, 1.25), color, 12)
-            draw_text_centered(surface, text, font_logo, (255, 255, 255), rect.center)
+            text_surf = font_logo.render(text, True, (255, 255, 255))
+            surface.blit(text_surf, text_surf.get_rect(
+                center=(rect.centerx, rect.centery + bob)))
 
         self.subtitle_label.draw(surface)
 
@@ -220,8 +253,5 @@ class MenuPage(Page):
 
         # 底部提示
         font = get_font_manager().get_tiny()
-        draw_text_centered(
-            surface, "方向键 / WASD / 鼠标滑动 操作方块 · ESC 暂停",
-            font, COLOR_TEXT_TERTIARY,
-            (WINDOW_WIDTH // 2, WINDOW_HEIGHT - 20),
-        )
+        draw_text_centered(surface, t("menu_hint"), font, COLOR_TEXT_TERTIARY,
+                           (WINDOW_WIDTH // 2, WINDOW_HEIGHT - 20))

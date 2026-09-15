@@ -19,8 +19,9 @@ from src.models.tile import Tile
 from src.utils import (
     get_font_manager,
     ease_out_cubic, ease_out_back, lerp, get_tile_color,
-    lighten, draw_card, draw_glow, draw_gradient_rounded_rect, draw_rounded_rect,
+    lighten, draw_card, draw_glow, draw_gradient_rounded_rect,
 )
+from src.views.effects import ScreenShake
 
 # 高级方块（>=128）预渲染外发光的边距（px）
 _TILE_GLOW_PAD = 10
@@ -31,7 +32,7 @@ class TileSurfaceCache:
     """
     方块 Surface 预渲染缓存 / Pre-rendered tile surface cache
 
-    将 (辉光 + 渐变底 + 数字投影) 一次性渲染成 Surface 按方块值缓存，
+    将 (辉光 + 渐变底 + 轮辋光 + 顶部光泽 + 数字投影) 一次成型并按值缓存，
     静止方块每帧只需一次 blit。>=128 的方块自带同色霓虹辉光。
     缓存值为 (surface, pad)，pad 为辉光外边距，blit 时向左上偏移。
     """
@@ -54,6 +55,15 @@ class TileSurfaceCache:
             draw_gradient_rounded_rect(
                 surface, inner, lighten(bg_color, 1.28), bg_color, _TILE_RADIUS,
             )
+            # 轮辋光：整圈 2px 提亮描边，塑造体积感
+            pygame.draw.rect(surface, lighten(bg_color, 1.55), inner, width=2,
+                             border_radius=_TILE_RADIUS)
+            # 顶部光泽：上半部白色低透明圆角，经典玻璃高光
+            gloss_h = int(TILE_SIZE * 0.42)
+            gloss = pygame.Surface((TILE_SIZE, gloss_h), pygame.SRCALPHA)
+            pygame.draw.rect(gloss, (255, 255, 255, 30), (0, 0, TILE_SIZE, gloss_h),
+                             border_radius=_TILE_RADIUS)
+            surface.blit(gloss, (pad, pad))
 
             font_size = TILE_FONT_SIZES.get(value, 28)
             font = get_font_manager().get_font(font_size, bold=True)
@@ -93,6 +103,7 @@ class TileRenderer:
         tile: Tile,
         pos: Optional[Tuple[float, float]] = None,
         scale: float = 1.0,
+        offset: Tuple[int, int] = (0, 0),
     ) -> None:
         """
         绘制单个方块（使用预渲染缓存）
@@ -100,12 +111,15 @@ class TileRenderer:
         Args:
             surface: 绘制目标
             tile: 方块数据
-            pos: 浮点 (row, col) 位置；None 表示使用 tile 当前逻辑位置
+            pos: 浮点 (row, col) 格子坐标；None 表示使用 tile 当前逻辑位置
             scale: 缩放比例（生成/合并动画），1.0 时零缩放直出
+            offset: 震屏像素偏移
         """
         if pos is None:
             pos = (float(tile.row), float(tile.col))
         x, y = TileRenderer.tile_origin(pos[0], pos[1])
+        x += offset[0]
+        y += offset[1]
         cached, pad = TileSurfaceCache.get(tile.value)
 
         if scale >= 0.999:
@@ -129,11 +143,29 @@ class BoardView:
         self.is_animating: bool = False
         self._anim_elapsed: float = 0  # 累计动画时长（秒），由 update(dt) 驱动，帧率无关
         self._anim_total: float = 0    # 整轮动画总时长（秒），供输入队列查询进度
+        self.shake = ScreenShake()     # 大合并震屏
+        self._empty_cache: dict = {}   # 空格子内凹贴图缓存
         self.board_rect = pygame.Rect(
             BOARD_X, BOARD_Y,
             TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1) + BOARD_PADDING * 2,
             TILE_SIZE * BOARD_SIZE + TILE_GAP * (BOARD_SIZE - 1) + BOARD_PADDING * 2,
         )
+
+    def _get_empty_cell(self) -> pygame.Surface:
+        """空格内凹贴图（底色 + 内侧暗边一次成型）/ Inset empty-cell surface"""
+        size = (TILE_SIZE, TILE_SIZE, COLOR_TILE_EMPTY)
+        surf = self._empty_cache.get(size)
+        if surf is None:
+            surf = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
+            pygame.draw.rect(surf, COLOR_TILE_EMPTY, (0, 0, TILE_SIZE, TILE_SIZE),
+                             border_radius=10)
+            # 内凹感：顶部 1px 暗边 + 底部 1px 亮边
+            pygame.draw.line(surf, lighten(COLOR_TILE_EMPTY, 0.72), (8, 1),
+                             (TILE_SIZE - 8, 1))
+            pygame.draw.line(surf, lighten(COLOR_TILE_EMPTY, 1.22), (8, TILE_SIZE - 2),
+                             (TILE_SIZE - 8, TILE_SIZE - 2))
+            self._empty_cache[size] = surf
+        return surf
 
     def start_move_animation(self, board: GameBoard) -> None:
         """开始移动动画 / Start move animation"""
@@ -179,6 +211,7 @@ class BoardView:
 
     def update(self, dt: float) -> None:
         """更新动画 / Update animations"""
+        self.shake.update(dt)
         if not self.is_animating:
             return
         self._anim_elapsed += dt
@@ -193,15 +226,18 @@ class BoardView:
 
     def draw(self, surface: pygame.Surface, board: GameBoard) -> None:
         """绘制棋盘 / Draw board"""
-        # 棋盘卡片：靛蓝辉光 + 玻璃卡片
-        draw_glow(surface, self.board_rect, (110, 96, 255), alpha=34, blur=16, radius=20)
-        draw_card(surface, self.board_rect, 20, bg=COLOR_BOARD_BG)
+        ox, oy = self.shake.offset
+        # 棋盘卡片：靛蓝辉光 + 玻璃卡片（随震屏偏移）
+        shaken = self.board_rect.move(ox, oy)
+        draw_glow(surface, shaken, (110, 96, 255), alpha=34, blur=16, radius=20)
+        draw_card(surface, shaken, 20, bg=COLOR_BOARD_BG)
 
-        # 空格子背景（缓存 blit）
+        # 空格子背景（内凹质感，缓存 blit）
+        empty = self._get_empty_cell()
         for row in range(BOARD_SIZE):
             for col in range(BOARD_SIZE):
                 rect = TileRenderer.get_tile_rect(row, col)
-                draw_rounded_rect(surface, COLOR_TILE_EMPTY, rect, 10)
+                surface.blit(empty, (rect.x + ox, rect.y + oy))
 
         elapsed = self._anim_elapsed
         animating = self.is_animating
@@ -209,7 +245,7 @@ class BoardView:
             anim = self._find_animation(tile) if animating else None
 
             if anim is None or anim["type"] == "static" or anim["duration"] <= 0:
-                TileRenderer.draw_tile(surface, tile)
+                TileRenderer.draw_tile(surface, tile, offset=(ox, oy))
                 continue
 
             if elapsed - anim["start_time"] <= 0:
@@ -221,15 +257,15 @@ class BoardView:
                 # 移动动画：prev -> target 平滑减速插值
                 row_f = lerp(tile.prev_row, tile.row, p)
                 col_f = lerp(tile.prev_col, tile.col, p)
-                TileRenderer.draw_tile(surface, tile, pos=(row_f, col_f))
+                TileRenderer.draw_tile(surface, tile, pos=(row_f, col_f), offset=(ox, oy))
             elif anim["type"] == "merge":
                 # 合并动画：轻微膨胀后回落（脉冲式，不越界闪烁）
                 scale = 1.0 + 0.14 * math.sin(progress * math.pi)
-                TileRenderer.draw_tile(surface, tile, scale=scale)
+                TileRenderer.draw_tile(surface, tile, scale=scale, offset=(ox, oy))
             else:  # spawn
                 # 生成动画：从小弹出（轻微过冲，spring 观感）
                 scale = 0.3 + 0.7 * ease_out_back(progress)
-                TileRenderer.draw_tile(surface, tile, scale=scale)
+                TileRenderer.draw_tile(surface, tile, scale=scale, offset=(ox, oy))
 
     def _find_animation(self, tile: Tile) -> Optional[dict]:
         """查找方块对应的动画 / Find animation for tile"""

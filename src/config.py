@@ -113,12 +113,16 @@ MODE_CONFIG = {
     "classic": {
         "name": "经典模式",
         "description": "不限时间，挑战最高分！",
+        "name_key": "mode_classic",
+        "desc_key": "mode_classic_desc",
         "icon": "∞",
         "accent": ACCENT_BLUE,
     },
     "timed": {
         "name": "限时模式",
         "description": "60 秒内挑战目标分数！",
+        "name_key": "mode_timed",
+        "desc_key": "mode_timed_desc",
         "icon": "60″",
         "accent": ACCENT_ORANGE,
         "time_limit": 60,
@@ -127,6 +131,8 @@ MODE_CONFIG = {
     "challenge": {
         "name": "挑战模式",
         "description": "限定步数内合成目标方块！",
+        "name_key": "mode_challenge",
+        "desc_key": "mode_challenge_desc",
         "icon": "128",
         "accent": ACCENT_PINK,
         "move_limit": 50,
@@ -149,6 +155,15 @@ INPUT_QUEUE_MAX = 3            # 动画期间缓存的最大输入数
 INPUT_APPLY_PROGRESS = 0.6     # 动画进度达到该比例即应用下一条输入
 KEY_REPEAT_DELAY_MS = 220      # 按住方向键首次连发延迟
 KEY_REPEAT_INTERVAL_MS = 110   # 按住方向键连发间隔
+
+# ========== 特效配置 ==========
+PARTICLE_MAX = 96              # 全局粒子数上限
+PARTICLE_MERGE_COUNT = 10      # 每次合并的粒子数
+SHAKE_MIN_TILE = 128           # 合并出该值以上方块时震屏
+SHAKE_DURATION = 0.22          # 震屏时长（秒）
+SHAKE_AMPLITUDE = 5            # 震屏幅度（px）
+TRANSITION_DURATION = 0.18     # 页面切换淡入/淡出时长（秒）
+GAME_OVER_PAUSE = 1.1          # 结束过渡停留时长（秒）
 
 # ========== 字号配置（8pt 网格） ==========
 def _find_chinese_font() -> str:

@@ -13,6 +13,7 @@ from src.config import (
     FONT_SIZE_TITLE1, FONT_SIZE_BODY,
 )
 from src.utils import blit_background, blit_overlay, draw_card, draw_glow, get_font_manager
+from src.i18n import t
 
 
 class PausePage(Page):
@@ -30,19 +31,19 @@ class PausePage(Page):
         btn_gap = 64
 
         self.title = Label(
-            cx, cy - 104, "游戏暂停",
+            cx, cy - 104, t("game_paused"),
             font_size=FONT_SIZE_TITLE1, color=COLOR_TEXT, bold=True, centered=True,
         )
 
         self.btn_resume = Button(
-            cx - btn_w // 2, cy - 40, btn_w, btn_h, "继续游戏",
+            cx - btn_w // 2, cy - 40, btn_w, btn_h, t("continue_game"),
             font_size=FONT_SIZE_BODY,
             color=ACCENT_BLUE, hover_color=(104, 178, 255),
             callback=lambda: self._set_result("resume"),
         )
 
         self.btn_restart = Button(
-            cx - btn_w // 2, cy - 40 + btn_gap, btn_w, btn_h, "重新开始",
+            cx - btn_w // 2, cy - 40 + btn_gap, btn_w, btn_h, t("restart"),
             font_size=FONT_SIZE_BODY,
             color=CARD_BG, hover_color=(66, 70, 116),
             text_color=COLOR_TEXT_SECONDARY, style="ghost", shadow=False,
@@ -50,7 +51,7 @@ class PausePage(Page):
         )
 
         self.btn_menu = Button(
-            cx - btn_w // 2, cy - 40 + btn_gap * 2, btn_w, btn_h, "返回主菜单",
+            cx - btn_w // 2, cy - 40 + btn_gap * 2, btn_w, btn_h, t("back_to_menu"),
             font_size=FONT_SIZE_BODY,
             color=CARD_BG, hover_color=(66, 70, 116),
             text_color=COLOR_TEXT_SECONDARY, style="ghost", shadow=False,

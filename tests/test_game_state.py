@@ -5,6 +5,7 @@ import unittest
 from src.models.game_state import GameState
 from src.models.board import GameBoard
 from src.models.tile import Tile
+from src.config import UNDO_LIMIT_DEFAULT
 
 
 def _fill_board(board: GameBoard, pattern: list) -> None:
@@ -33,7 +34,7 @@ class TestGameState(unittest.TestCase):
         self.assertEqual(gs.state, GameState.STATE_PLAYING)
         self.assertEqual(gs.mode, "classic")
         self.assertIsInstance(gs.board, GameBoard)
-        self.assertEqual(gs.undo_count, 2)
+        self.assertEqual(gs.undo_count, UNDO_LIMIT_DEFAULT)
 
     def test_start_game_timed(self):
         """测试开始计时模式"""

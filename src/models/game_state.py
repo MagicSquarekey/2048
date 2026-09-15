@@ -4,6 +4,7 @@
 import time
 from typing import Optional, Dict, Any
 
+from src.config import UNDO_LIMIT_DEFAULT, CLEAN_LIMIT_DEFAULT
 from src.models.board import GameBoard
 
 
@@ -30,8 +31,8 @@ class GameState:
         self.target_score: int = 0           # 目标分数
         self.target_tile: int = 0            # 目标方块
         self.is_ad_reward_used: bool = False  # 本局是否使用过广告复活
-        self.undo_count: int = 2             # 剩余撤销次数
-        self.clean_count: int = 0            # 剩余清理次数
+        self.undo_count: int = UNDO_LIMIT_DEFAULT   # 剩余撤销次数
+        self.clean_count: int = CLEAN_LIMIT_DEFAULT  # 剩余清理次数
         self.prev_board_state = None         # 上一步棋盘状态（用于撤销）
         self.prev_score: int = 0             # 上一步分数
 

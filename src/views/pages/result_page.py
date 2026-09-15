@@ -7,14 +7,17 @@ from typing import Optional, Any
 from src.views.pages.base_page import Page
 from src.views.ui_components import Button, Label
 from src.config import (
-    WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_TEXT, COLOR_TEXT_SECONDARY,
-    COLOR_TEXT_TERTIARY, ACCENT_BLUE, ACCENT_GOLD, CARD_BG, CARD_BORDER,
-    FONT_SIZE_TITLE1, FONT_SIZE_LARGE_TITLE, FONT_SIZE_SUBHEAD, FONT_SIZE_BODY,
+    WINDOW_WIDTH, COLOR_TEXT, COLOR_TEXT_SECONDARY,
+    COLOR_TEXT_TERTIARY, ACCENT_BLUE, ACCENT_GOLD, CARD_BG,
+    FONT_SIZE_TITLE1, FONT_SIZE_SUBHEAD, FONT_SIZE_BODY,
 )
 from src.utils import (
     blit_background, draw_card, draw_glow, draw_text_centered, get_font_manager,
 )
 from src.i18n import t
+
+# 分数滚动动画时长（秒）
+_SCORE_ROLL = 0.7
 
 
 class ResultPage(Page):
@@ -38,7 +41,7 @@ class ResultPage(Page):
         self.title_label = Label(cx, panel_y + 46, "", font_size=FONT_SIZE_TITLE1,
                                  color=COLOR_TEXT, bold=True, centered=True)
 
-        # 分数标签 + 大分数
+        # 分数标签 + 大分数（滚动动画）
         self.score_title = Label(cx, panel_y + 96, t("final_score"),
                                  font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_TERTIARY,
                                  centered=True)
@@ -48,6 +51,7 @@ class ResultPage(Page):
         # 统计信息（2×2 网格小卡片）
         self.stats_y = panel_y + 186
         self.stat_labels = []
+        self._is_new_record = False
 
         # 按钮
         btn_w, btn_h = 160, 48
@@ -72,6 +76,9 @@ class ResultPage(Page):
         self._target_page = None
         self._result_data = {}
         self._is_win = False
+        self._score_target = 0
+        self._score_display = 0
+        self._score_timer = 0.0
 
     def _on_retry(self) -> None:
         """点击重试 / Click retry"""
@@ -96,28 +103,32 @@ class ResultPage(Page):
 
         is_win = data.get("is_win", False)
         self._is_win = is_win
+        self._is_new_record = data.get("is_new_record", False)
         self.title_label.set_text(t("you_win") if is_win else t("game_over"))
 
-        score = data.get("score", 0)
-        self.score_label.set_text(str(score))
+        # 分数滚动动画
+        self._score_target = data.get("score", 0)
+        self._score_display = 0
+        self._score_timer = 0.0
+        self.score_label.set_text("0")
 
         # 统计信息（2×2 网格）
         mode_names = {"classic": t("mode_classic"), "timed": t("mode_timed"),
                       "challenge": t("mode_challenge")}
         mode = mode_names.get(data.get("mode", "classic"), t("mode_classic"))
-        max_tile = data.get("max_tile", 0)
-        move_count = data.get("move_count", 0)
-        elapsed = data.get("elapsed_time", 0)
-        minutes = int(elapsed) // 60
-        seconds = int(elapsed) % 60
-
         stats = [
-            (t("max_tile"), str(max_tile)),
-            (t("move_count"), str(move_count)),
+            (t("max_tile"), str(data.get("max_tile", 0))),
+            (t("move_count"), str(data.get("move_count", 0))),
             (t("mode_label"), mode),
-            (t("elapsed_time"), f"{minutes:02d}:{seconds:02d}"),
+            (t("elapsed_time"), self._fmt_time(data.get("elapsed_time", 0))),
         ]
         self.stat_labels = stats
+
+    @staticmethod
+    def _fmt_time(seconds: float) -> str:
+        minutes = int(seconds) // 60
+        secs = int(seconds) % 60
+        return f"{minutes:02d}:{secs:02d}"
 
     def handle_event(self, event: pygame.event.Event) -> Optional[str]:
         """处理事件 / Handle event"""
@@ -129,6 +140,17 @@ class ResultPage(Page):
         """更新 / Update"""
         for btn in self.buttons:
             btn.update(dt)
+
+        # 分数滚动（ease-out：先快后慢）
+        if self._score_display < self._score_target:
+            self._score_timer += dt
+            progress = min(1.0, self._score_timer / _SCORE_ROLL)
+            eased = 1 - (1 - progress) ** 3
+            value = int(round(self._score_target * eased))
+            if value != self._score_display:
+                self._score_display = value
+                self.score_label.set_text(str(value))
+
         if self._target_page:
             target = self._target_page
             self._target_page = None
@@ -152,6 +174,18 @@ class ResultPage(Page):
         # 分数区
         self.score_title.draw(surface)
         self.score_label.draw(surface)
+
+        # 新纪录徽章（分数右侧，金色胶囊 + 辉光）
+        if self._is_new_record:
+            font_badge = get_font_manager().get_font(14, bold=True)
+            text = t("new_record")
+            tw = font_badge.size(text)[0]
+            badge = pygame.Rect(0, 0, tw + 24, 26)
+            badge.centery = rect.y + 96
+            badge.left = cx + 62
+            draw_glow(surface, badge, ACCENT_GOLD, alpha=40, blur=8, radius=13)
+            draw_card(surface, badge, 13, bg=(64, 52, 16))
+            draw_text_centered(surface, text, font_badge, ACCENT_GOLD, badge.center)
 
         # 2×2 统计网格
         grid_w, grid_h = 172, 52

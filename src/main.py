@@ -28,8 +28,9 @@ import pygame
 from src.config import (
     WINDOW_WIDTH, WINDOW_HEIGHT, FPS,
     KEY_REPEAT_DELAY_MS, KEY_REPEAT_INTERVAL_MS,
+    TRANSITION_DURATION,
 )
-from src.utils import blit_background
+from src.utils import blit_background, blit_overlay
 from src.views.pages import (
     PageManager, MenuPage, GamePage, ResultPage,
     SettingsPage, AchievementsPage, PausePage, LoginPage,
@@ -44,6 +45,57 @@ def init_pygame() -> pygame.Surface:
     # 方向键按住连发：配合游戏页输入队列实现按住连续滑动
     pygame.key.set_repeat(KEY_REPEAT_DELAY_MS, KEY_REPEAT_INTERVAL_MS)
     return surface
+
+
+class FadeTransition:
+    """页面切换淡入淡出过渡 / Fade transition between pages
+
+    out 阶段渐暗（此期间屏蔽输入），切页后 in 阶段渐亮。
+    """
+
+    def __init__(self, duration: float = TRANSITION_DURATION) -> None:
+        self.duration = duration
+        self.phase: str = ""       # "" | "out" | "in"
+        self.alpha: float = 0.0
+        self._action = None
+        self._fade_surf = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+        self._fade_surf.fill((6, 6, 16))
+
+    def start(self, action) -> None:
+        """开始过渡，action 为切页闭包 / Begin transition with a page-switch closure"""
+        if self.phase:
+            return  # 过渡中忽略新请求
+        self.phase = "out"
+        self.alpha = 0.0
+        self._action = action
+
+    @property
+    def blocking(self) -> bool:
+        """out 阶段屏蔽输入 / Input blocked during fade-out"""
+        return self.phase == "out"
+
+    def update(self, dt: float) -> None:
+        if not self.phase:
+            return
+        if self.phase == "out":
+            self.alpha += dt / self.duration
+            if self.alpha >= 1.0:
+                self.alpha = 1.0
+                if self._action:
+                    self._action()
+                    self._action = None
+                self.phase = "in"
+        else:
+            self.alpha -= dt / self.duration
+            if self.alpha <= 0.0:
+                self.phase = ""
+                self.alpha = 0.0
+
+    def draw(self, surface: pygame.Surface) -> None:
+        if not self.phase:
+            return
+        self._fade_surf.set_alpha(int(255 * self.alpha))
+        surface.blit(self._fade_surf, (0, 0))
 
 
 def register_pages() -> PageManager:
@@ -64,14 +116,18 @@ def main() -> None:
     surface = init_pygame()
     clock = pygame.time.Clock()
     pm = register_pages()
+    transition = FadeTransition()
 
     # 设置页面路由
-    def handle_page_switch(page_name: str) -> None:
+    def handle_page_switch(page_name: str, **kwargs) -> None:
         """处理页面切换 / Handle page switch"""
         if page_name == "game" or page_name == "classic":
+            # 结算页"再来一局"沿用上一局模式
             game_page = pm.get_page("game")
-            if game_page:
-                pm.switch_to("game", mode="classic")
+            mode = "classic"
+            if game_page and game_page._game_state:
+                mode = game_page._game_state.mode
+            pm.switch_to("game", mode=mode)
         elif page_name == "timed":
             pm.switch_to("game", mode="timed")
         elif page_name == "challenge":
@@ -108,6 +164,12 @@ def main() -> None:
         else:
             pm.switch_to(page_name)
 
+    def request_page_switch(page_name: str, **kwargs) -> None:
+        """经淡入淡出过渡切换页面 / Switch page via fade transition"""
+        if transition.phase:
+            return
+        transition.start(lambda: handle_page_switch(page_name, **kwargs))
+
     # 启动时进入主菜单
     pm.switch_to("menu")
 
@@ -121,21 +183,25 @@ def main() -> None:
                 running = False
                 break
 
+            # 过渡 out 阶段屏蔽输入，防止点到旧页面
+            if transition.blocking:
+                continue
+
             # 全局快捷键
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     current = pm.current_page
                     if current and current.name == "game":
                         # 游戏中按 ESC -> 暂停
-                        handle_page_switch("pause")
+                        request_page_switch("pause")
                         continue
                     elif current and current.name == "pause":
                         # 暂停中按 ESC -> 继续
-                        handle_page_switch("resume")
+                        request_page_switch("resume")
                         continue
                     elif current and current.name != "menu":
                         # 其他非菜单页面返回菜单
-                        pm.switch_to("menu")
+                        request_page_switch("menu")
                         continue
                     else:
                         # 菜单页面退出游戏
@@ -146,17 +212,19 @@ def main() -> None:
             if pm.current_page:
                 target = pm.current_page.handle_event(event)
                 if target:
-                    handle_page_switch(target)
+                    request_page_switch(target)
 
         # 更新
         if pm.current_page:
             target = pm.current_page.update(dt)
             if target:
-                handle_page_switch(target)
+                request_page_switch(target)
+        transition.update(dt)
 
         # 绘制
         blit_background(surface)
         pm.draw(surface)
+        transition.draw(surface)
         pygame.display.flip()
 
     pygame.quit()

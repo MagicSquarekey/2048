@@ -15,6 +15,7 @@ from src.config import (
 from src.utils import (
     blit_background, draw_card, draw_text_centered, get_font_manager,
 )
+from src.i18n import t
 
 
 class AchievementsPage(Page):
@@ -29,7 +30,7 @@ class AchievementsPage(Page):
         cx = WINDOW_WIDTH // 2
 
         # 标题
-        self.title_label = Label(cx, 48, "成就", font_size=FONT_SIZE_TITLE1,
+        self.title_label = Label(cx, 48, t("achievements_title"), font_size=FONT_SIZE_TITLE1,
                                  color=COLOR_TEXT, bold=True, centered=True)
 
         # 成就卡片
@@ -41,7 +42,7 @@ class AchievementsPage(Page):
         # 返回按钮
         self.btn_back = Button(
             cx - 90, panel_y + panel_h + 16, 180, 44,
-            "返回主菜单", font_size=FONT_SIZE_BODY,
+            t("back_to_menu"), font_size=FONT_SIZE_BODY,
             color=CARD_BG, hover_color=(66, 70, 116),
             text_color=COLOR_TEXT_SECONDARY, style="ghost", shadow=False,
             callback=self._on_back,
@@ -126,7 +127,7 @@ class AchievementsPage(Page):
             surface.blit(desc_surf, (item_rect.x + 59, item_rect.y + 29))
 
             # 状态
-            status_text = "已达成" if unlocked else "未达成"
+            status_text = t("achieved") if unlocked else t("locked")
             status_color = ACCENT_GOLD if unlocked else COLOR_TEXT_QUATERNARY
             draw_text_centered(surface, status_text, font_status, status_color,
                                (item_rect.right - 42, item_rect.centery))

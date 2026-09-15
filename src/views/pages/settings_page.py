@@ -130,6 +130,13 @@ class SettingsPage(Page):
         self.music_label.text = t("music")
         self.lang_label.text = t("language")
         self.title_label.text = t("settings")
+        # 按钮 / 弹窗文案同步刷新
+        self.btn_reset.text = t("reset_data")
+        self.btn_back.text = t("back_to_menu")
+        self.alert.title = "确认重置" if new_lang == "zh" else "Confirm Reset"
+        self.alert.message = t("confirm_reset")
+        self.alert.btn_confirm.text = t("reset_data")
+        self.alert.btn_cancel.text = t("cancel")
         self._update_lang_value_pos()
 
     def _on_reset(self) -> None:
@@ -218,7 +225,7 @@ class SettingsPage(Page):
 
         # 语言行右侧提示可点击
         font_hint = get_font_manager().get_tiny()
-        draw_text_centered(surface, "点击切换", font_hint, COLOR_TEXT_TERTIARY,
+        draw_text_centered(surface, t("tap_to_switch"), font_hint, COLOR_TEXT_TERTIARY,
                            (self.panel_rect.right - 88, self.lang_row_rect.centery))
 
         for label in self.labels:

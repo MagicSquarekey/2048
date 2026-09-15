@@ -15,6 +15,7 @@ from src.config import (
 from src.utils import (
     blit_background, draw_card, draw_glow, draw_rounded_rect, get_font_manager,
 )
+from src.i18n import t
 
 
 class LoginPage(Page):
@@ -34,12 +35,12 @@ class LoginPage(Page):
         self._panel_rect.center = (cx, cy)
 
         self.title = Label(
-            cx, self._panel_rect.y + 46, "用户登录",
+            cx, self._panel_rect.y + 46, t("user_login"),
             font_size=FONT_SIZE_TITLE1, color=COLOR_TEXT, bold=True, centered=True,
         )
 
         self.desc = Label(
-            cx, self._panel_rect.y + 86, "登录后可云端同步游戏进度",
+            cx, self._panel_rect.y + 86, t("login_desc"),
             font_size=FONT_SIZE_SUBHEAD, color=COLOR_TEXT_TERTIARY, centered=True,
         )
 
@@ -56,14 +57,14 @@ class LoginPage(Page):
         self.password_active = False
 
         self.btn_login = Button(
-            cx - btn_w // 2, self._panel_rect.y + 252, btn_w, btn_h, "登录",
+            cx - btn_w // 2, self._panel_rect.y + 252, btn_w, btn_h, t("login"),
             font_size=FONT_SIZE_BODY,
             color=ACCENT_BLUE, hover_color=(104, 178, 255),
             callback=self._on_login,
         )
 
         self.btn_back = Button(
-            cx - btn_w // 2, self._panel_rect.y + 314, btn_w, btn_h, "返回",
+            cx - btn_w // 2, self._panel_rect.y + 314, btn_w, btn_h, t("back"),
             font_size=FONT_SIZE_BODY,
             color=CARD_BG, hover_color=(66, 70, 116),
             text_color=COLOR_TEXT_SECONDARY, style="ghost", shadow=False,
@@ -76,9 +77,9 @@ class LoginPage(Page):
     def _on_login(self) -> None:
         """登录按钮回调（占位）/ Login button callback (placeholder)"""
         if not self.username or not self.password:
-            self._message = "请输入用户名和密码"
+            self._message = t("login_empty_warn")
             return
-        self._message = "云端同步功能开发中..."
+        self._message = t("login_dev_msg")
         get_sound_manager().play("click")
 
     def _set_result(self, result: str) -> None:
@@ -165,11 +166,11 @@ class LoginPage(Page):
 
         self._draw_input_box(
             surface, self.username_box, self.username,
-            "用户名", False, self.username_active,
+            t("username"), False, self.username_active,
         )
         self._draw_input_box(
             surface, self.password_box, self.password,
-            "密码", True, self.password_active,
+            t("password"), True, self.password_active,
         )
 
         if self._message:
