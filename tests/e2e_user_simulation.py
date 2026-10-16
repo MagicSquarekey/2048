@@ -11,11 +11,10 @@ import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-# 数据隔离：E2E 全程使用临时存档，绝不触碰玩家真实数据（必须在导入 src 前设置）
-os.environ.setdefault(
-    "GAME_2048_DATA_DIR",
-    os.path.join(tempfile.gettempdir(), "2048_game_e2e_data"),
-)
+# 数据隔离：E2E 全程使用临时存档，绝不触碰玩家真实数据（在导入 src 后、使用前重定向）
+import src.data_paths as _data_paths
+
+_data_paths.redirect_data_dir(os.path.join(tempfile.gettempdir(), "2048_game_e2e_data"))
 
 import pygame
 

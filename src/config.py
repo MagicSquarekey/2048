@@ -239,10 +239,10 @@ AD_REWARD_AMOUNT = 1
 AD_COOLDOWN = 30
 
 # ========== 数据存储路径 ==========
-# 环境变量 GAME_2048_DATA_DIR 可重定向数据目录（测试隔离用，避免测试重置真实玩家数据）
-DATA_DIR = os.environ.get("GAME_2048_DATA_DIR") or os.path.join(
-    os.path.expanduser("~"), "AppData", "Local", "2048_Game"
-)
+# 固定常量路径（不含任何外部输入，确保写入目标始终为用户本地数据目录）。
+# 测试隔离请使用 src/data_paths.redirect_data_dir() 在运行时重定向，
+# 不要在此处引入环境变量或外部输入。
+DATA_DIR = os.path.join(os.path.expanduser("~"), "AppData", "Local", "2048_Game")
 DATA_FILE = os.path.join(DATA_DIR, "game_data.json")
 os.makedirs(DATA_DIR, exist_ok=True)
 
