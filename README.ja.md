@@ -2,17 +2,32 @@
 
 > 「ディープスペース・ネオン」ダークテーマを採用した 2048 数字合成ゲーム。Python + Pygame 製、Windows デスクトップ向け。
 
-**現在のバージョン: [v0.0.1](https://github.com/MagicSquarekey/2048/releases/tag/v0.0.1)** · [简体中文](README.md) · [English](README.en.md)
+**現在のバージョン: [v0.0.1](https://github.com/MagicSquarekey/2048/releases/tag/v0.0.1)** · [简体中文](README.md) · [English](README.en.md) · [繁體中文](README.zh-TW.md) · [한국어](README.ko.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Español](README.es.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [Italiano](README.it.md) · [Nederlands](README.nl.md) · [Türkçe](README.tr.md) · [Tiếng Việt](README.vi.md) · [ภาษาไทย](README.th.md) · [Bahasa Indonesia](README.id.md) · [हिन्दी](README.hi.md) · [العربية](README.ar.md)
 
 ---
 
-## 📖 言語 / Languages
+## 📖 言語
 
-| 言語 (Language) | ドキュメント (Document) |
+| 言語 | ドキュメント |
 |---|---|
 | 简体中文 | [README.md](README.md) |
 | English | [README.en.md](README.en.md) |
 | 日本語 (現在) | [README.ja.md](README.ja.md) |
+| 繁體中文 | [README.zh-TW.md](README.zh-TW.md) |
+| 한국어 | [README.ko.md](README.ko.md) |
+| Français | [README.fr.md](README.fr.md) |
+| Deutsch | [README.de.md](README.de.md) |
+| Español | [README.es.md](README.es.md) |
+| Português | [README.pt.md](README.pt.md) |
+| Русский | [README.ru.md](README.ru.md) |
+| Italiano | [README.it.md](README.it.md) |
+| Nederlands | [README.nl.md](README.nl.md) |
+| Türkçe | [README.tr.md](README.tr.md) |
+| Tiếng Việt | [README.vi.md](README.vi.md) |
+| ภาษาไทย | [README.th.md](README.th.md) |
+| Bahasa Indonesia | [README.id.md](README.id.md) |
+| हिन्दी | [README.hi.md](README.hi.md) |
+| العربية | [README.ar.md](README.ar.md) |
 
 ---
 
