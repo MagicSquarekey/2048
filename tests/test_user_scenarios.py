@@ -84,7 +84,10 @@ class TestUserScenario_GamePlay(unittest.TestCase):
         ])
 
         self.gs.save_for_undo()
-        moved = self.gs.board.move("left")
+        # 屏蔽随机生成的新方块，确保断言只验证合并结果
+        # Disable random spawn so the assertions only cover the merge result.
+        with patch.object(self.gs.board, "_spawn_tile"):
+            moved = self.gs.board.move("left")
 
         self.assertTrue(moved)
         self.assertEqual(self.gs.board.grid[0][0].value, 4)
