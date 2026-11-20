@@ -11,8 +11,18 @@ from src.config import (
     FONT_SIZE_LARGE, FONT_SIZE_MEDIUM, FONT_SIZE_SMALL, FONT_SIZE_TINY,
     COLOR_OVERLAY,
     BG_GRADIENT_TOP, BG_GRADIENT_BOTTOM, BG_GLOW_BLUE, BG_GLOW_PURPLE,
-    CARD_BG, CARD_BORDER,
+    CARD_BG, CARD_BORDER, UI_SUPERSAMPLE,
 )
+
+# 静态图形超采样倍数（至少 1）/ Static-graphics supersampling factor (>=1)
+_SS = max(1, int(UI_SUPERSAMPLE))
+
+
+def _downscale(surface: pygame.Surface, size: Tuple[int, int]) -> pygame.Surface:
+    """把超采样 Surface 平滑缩回目标尺寸 / Smoothly downscale a supersampled surface"""
+    if _SS <= 1:
+        return surface
+    return pygame.transform.smoothscale(surface, size)
 
 
 class FontManager:
@@ -84,8 +94,52 @@ class RoundedRectCache:
         if surface is None:
             if len(cls._cache) >= cls._max_cache_size:
                 cls._cache.clear()
-            surface = pygame.Surface((width, height), pygame.SRCALPHA)
-            pygame.draw.rect(surface, color, (0, 0, width, height), border_radius=radius)
+            # 先按 ss 倍尺寸绘制圆角，再平滑缩回，边缘获得抗锯齿
+            hi = pygame.Surface((width * _SS, height * _SS), pygame.SRCALPHA)
+            # smoothscale 不预乘 alpha：透明底先用正确 RGB 填充，避免边缘被压暗
+            hi.fill((*color, 0))
+            pygame.draw.rect(
+                hi, color, (0, 0, width * _SS, height * _SS),
+                border_radius=max(0, radius * _SS),
+            )
+            surface = _downscale(hi, (width, height))
+            cls._cache[key] = surface
+        return surface
+
+
+class BorderedRectCache:
+    """带边框圆角矩形缓存（底色 + 描边一次成型）/ Cached bordered rounded rect"""
+    _cache: dict = {}
+    _max_cache_size = 128
+
+    @classmethod
+    def get_surface(
+        cls,
+        width: int,
+        height: int,
+        fill: Tuple[int, int, int],
+        border: Tuple[int, int, int],
+        border_width: int,
+        radius: int,
+    ) -> pygame.Surface:
+        key = (width, height, fill, border, border_width, radius)
+        surface = cls._cache.get(key)
+        if surface is None:
+            if len(cls._cache) >= cls._max_cache_size:
+                cls._cache.clear()
+            hi = pygame.Surface((width * _SS, height * _SS), pygame.SRCALPHA)
+            # 外缘是边框色：透明底用边框 RGB 填充，缩小时边缘不发暗
+            hi.fill((*border, 0))
+            pygame.draw.rect(
+                hi, fill, (0, 0, width * _SS, height * _SS),
+                border_radius=max(0, radius * _SS),
+            )
+            pygame.draw.rect(
+                hi, border, (0, 0, width * _SS, height * _SS),
+                width=max(1, border_width * _SS),
+                border_radius=max(0, radius * _SS),
+            )
+            surface = _downscale(hi, (width, height))
             cls._cache[key] = surface
         return surface
 
@@ -100,16 +154,10 @@ def draw_rounded_rect(
 ) -> None:
     """绘制圆角矩形（带缓存，直接 blit）/ Draw rounded rectangle (cached)"""
     if border_width > 0 and border_color:
-        # 带边框的走原逻辑（低频路径）
-        shape_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-        pygame.draw.rect(
-            shape_surface, color, (0, 0, rect.width, rect.height), border_radius=radius,
+        cached = BorderedRectCache.get_surface(
+            rect.width, rect.height, color, border_color, border_width, radius,
         )
-        pygame.draw.rect(
-            shape_surface, border_color, (0, 0, rect.width, rect.height),
-            width=border_width, border_radius=radius,
-        )
-        surface.blit(shape_surface, rect.topleft)
+        surface.blit(cached, rect.topleft)
         return
     cached = RoundedRectCache.get_surface(rect.width, rect.height, color, radius)
     surface.blit(cached, rect.topleft)
@@ -130,7 +178,9 @@ class BackgroundCache:
     @classmethod
     def _get_base(cls) -> pygame.Surface:
         if cls._base is None:
-            w, h = WINDOW_WIDTH, WINDOW_HEIGHT
+            ss = _SS
+            # 超采样画布：渐变与暗角都在 2x 尺寸上绘制，缩回后更平滑
+            w, h = WINDOW_WIDTH * ss, WINDOW_HEIGHT * ss
             surf = pygame.Surface((w, h))
             top, bottom = BG_GRADIENT_TOP, BG_GRADIENT_BOTTOM
             for y in range(h):
@@ -143,8 +193,8 @@ class BackgroundCache:
                 pygame.draw.line(surf, color, (0, y), (w, y))
             # 四角暗角：同心圆环由外向内渐暗，增加纵深
             vignette = pygame.Surface((w, h), pygame.SRCALPHA)
-            steps = 22
-            max_r = int(math.hypot(w, h) // 2) + 40
+            steps = 28
+            max_r = int(math.hypot(w, h) // 2) + 40 * ss
             cx, cy = w // 2, h // 2
             for i in range(steps):
                 t = i / steps                      # 0=外缘 1=中心
@@ -154,20 +204,24 @@ class BackgroundCache:
                     continue
                 pygame.draw.circle(vignette, (6, 6, 18, alpha), (cx, cy), r)
             surf.blit(vignette, (0, 0))
-            cls._base = surf
+            cls._base = _downscale(surf, (WINDOW_WIDTH, WINDOW_HEIGHT))
         return cls._base
 
     @classmethod
     def _get_glows(cls) -> list:
         if not cls._glows:
+            ss = _SS
             for color, radius in ((BG_GLOW_BLUE, 250), (BG_GLOW_PURPLE, 290)):
-                glow = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-                steps = 22
+                r_ss = radius * ss
+                glow = pygame.Surface((r_ss * 2, r_ss * 2), pygame.SRCALPHA)
+                # smoothscale 不预乘 alpha：透明底先用光斑 RGB 填充
+                glow.fill((*color, 0))
+                steps = 32
                 for i in range(steps, 0, -1):
-                    r = int(radius * i / steps)
+                    r = int(r_ss * i / steps)
                     alpha = int(34 * (1 - i / steps) ** 1.5)
-                    pygame.draw.circle(glow, (*color, alpha), (radius, radius), r)
-                cls._glows.append(glow)
+                    pygame.draw.circle(glow, (*color, alpha), (r_ss, r_ss), r)
+                cls._glows.append(_downscale(glow, (radius * 2, radius * 2)))
         return cls._glows
 
     @classmethod
@@ -234,9 +288,18 @@ class CardCache:
         if surface is None:
             if len(cls._cache) >= cls._max_cache_size:
                 cls._cache.clear()
-            surface = pygame.Surface((width, height), pygame.SRCALPHA)
-            pygame.draw.rect(surface, bg, (0, 0, width, height), border_radius=radius)
-            pygame.draw.rect(surface, border, (0, 0, width, height), width=1, border_radius=radius)
+            hi = pygame.Surface((width * _SS, height * _SS), pygame.SRCALPHA)
+            # smoothscale 不预乘 alpha：透明底用外缘边框色填充，避免暗边
+            hi.fill((*border, 0))
+            pygame.draw.rect(
+                hi, bg, (0, 0, width * _SS, height * _SS),
+                border_radius=max(0, radius * _SS),
+            )
+            pygame.draw.rect(
+                hi, border, (0, 0, width * _SS, height * _SS),
+                width=max(1, _SS), border_radius=max(0, radius * _SS),
+            )
+            surface = _downscale(hi, (width, height))
             cls._cache[key] = surface
         return surface
 
@@ -276,11 +339,23 @@ class GlowCache:
             if len(cls._cache) >= cls._max_cache_size:
                 cls._cache.clear()
             total_w, total_h = width + blur * 2, height + blur * 2
-            surface = pygame.Surface((total_w, total_h), pygame.SRCALPHA)
-            for i in range(blur, 0, -1):
-                layer_alpha = int(alpha * (1 - i / (blur + 1)) ** 1.5)
-                layer_rect = pygame.Rect(blur - i, blur - i, width + i * 2, height + i * 2)
-                pygame.draw.rect(surface, (*color, layer_alpha), layer_rect, border_radius=radius + i)
+            ss = _SS
+            blur_ss = blur * ss
+            # 高分辨率层：所有坐标/圆角/blur 层数按 ss 放大，alpha 衰减公式不变
+            hi = pygame.Surface((total_w * ss, total_h * ss), pygame.SRCALPHA)
+            # smoothscale 不预乘 alpha：透明底先用辉光 RGB 填充，避免边缘发暗
+            hi.fill((*color, 0))
+            for i in range(blur_ss, 0, -1):
+                layer_alpha = int(alpha * (1 - i / (blur_ss + 1)) ** 1.5)
+                layer_rect = pygame.Rect(
+                    blur_ss - i, blur_ss - i,
+                    width * ss + i * 2, height * ss + i * 2,
+                )
+                pygame.draw.rect(
+                    hi, (*color, layer_alpha), layer_rect,
+                    border_radius=max(0, radius * ss + i),
+                )
+            surface = _downscale(hi, (total_w, total_h))
             cls._cache[key] = surface
         return surface
 
@@ -317,20 +392,28 @@ class GradientRectCache:
         if surface is None:
             if len(cls._cache) >= cls._max_cache_size:
                 cls._cache.clear()
-            grad = pygame.Surface((width, height), pygame.SRCALPHA)
-            for y in range(height):
-                t = y / max(1, height - 1)
+            ss = _SS
+            w_ss, h_ss = width * ss, height * ss
+            grad = pygame.Surface((w_ss, h_ss), pygame.SRCALPHA)
+            for y in range(h_ss):
+                t = y / max(1, h_ss - 1)
                 color = (
                     int(top_color[0] + (bottom_color[0] - top_color[0]) * t),
                     int(top_color[1] + (bottom_color[1] - top_color[1]) * t),
                     int(top_color[2] + (bottom_color[2] - top_color[2]) * t),
                 )
-                pygame.draw.line(grad, color, (0, y), (width, y))
-            # 用圆角矩形蒙版裁出圆角
-            mask = pygame.Surface((width, height), pygame.SRCALPHA)
-            pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, width, height), border_radius=radius)
-            grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-            cls._cache[key] = surface = grad
+                pygame.draw.line(grad, color, (0, y), (w_ss, y))
+            # 用圆角矩形蒙版裁出圆角：蒙版透明区保持白色 RGB + alpha 0，
+            # 用 BLEND_RGBA_MULT 只改 alpha、保留渐变 RGB，避免缩小后出现暗边
+            mask = pygame.Surface((w_ss, h_ss), pygame.SRCALPHA)
+            mask.fill((255, 255, 255, 0))
+            pygame.draw.rect(
+                mask, (255, 255, 255, 255), (0, 0, w_ss, h_ss),
+                border_radius=max(0, radius * ss),
+            )
+            grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            surface = _downscale(grad, (width, height))
+            cls._cache[key] = surface
         return surface
 
 

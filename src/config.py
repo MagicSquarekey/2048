@@ -9,6 +9,11 @@ WINDOW_HEIGHT = 600
 WINDOW_TITLE = "2048"
 FPS = 60
 
+# 窗口自由缩放 / Free window resizing
+MIN_WINDOW_WIDTH = 480      # 最小可缩放窗口宽 / Minimum resizable window width
+MIN_WINDOW_HEIGHT = 360     # 最小可缩放窗口高 / Minimum resizable window height
+UI_SUPERSAMPLE = 2          # 静态图形超采样倍数 / Static-graphics supersampling factor
+
 # ========== 棋盘配置 ==========
 BOARD_SIZE = 4
 TILE_SIZE = 90          # 略微缩小以增加间距感

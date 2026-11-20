@@ -9,7 +9,10 @@ from typing import List, Tuple
 
 import pygame
 
-from src.config import PARTICLE_MAX
+from src.config import PARTICLE_MAX, UI_SUPERSAMPLE
+
+# 静态图形超采样倍数（至少 1）/ Static-graphics supersampling factor (>=1)
+_SS = max(1, int(UI_SUPERSAMPLE))
 
 
 class _SoftCircleCache:
@@ -24,12 +27,21 @@ class _SoftCircleCache:
         if surf is None:
             if len(cls._cache) >= cls._max:
                 cls._cache.clear()
-            surf = pygame.Surface((size * 2, size * 2), pygame.SRCALPHA)
-            steps = 4
+            ss = _SS
+            r_ss = size * ss
+            # 先在 size*2*ss 的画布上绘制，缩回后柔边过渡更细腻
+            hi = pygame.Surface((r_ss * 2, r_ss * 2), pygame.SRCALPHA)
+            # smoothscale 不预乘 alpha：透明底先用柔边圆颜色填充，避免边缘发暗
+            hi.fill((*color, 0))
+            steps = 6
             for i in range(steps, 0, -1):
-                r = max(1, int(size * i / steps))
+                r = max(1, int(r_ss * i / steps))
                 alpha = int(255 * (1 - i / (steps + 1)) ** 0.8)
-                pygame.draw.circle(surf, (*color, min(255, alpha)), (size, size), r)
+                pygame.draw.circle(hi, (*color, min(255, alpha)), (r_ss, r_ss), r)
+            if ss > 1:
+                surf = pygame.transform.smoothscale(hi, (size * 2, size * 2))
+            else:
+                surf = hi
             cls._cache[key] = surf
         return surf
 

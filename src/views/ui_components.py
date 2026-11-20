@@ -10,7 +10,7 @@ from src.config import (
     COLOR_BTN_DANGER, COLOR_BTN_DANGER_HOVER,
     COLOR_TEXT, COLOR_TEXT_SECONDARY, COLOR_OVERLAY,
     ACCENT_BLUE, ACCENT_GREEN, CARD_BG, CARD_BORDER,
-    RADIUS_MD, RADIUS_LG,
+    RADIUS_MD, RADIUS_LG, UI_SUPERSAMPLE,
 )
 from src.utils import (
     draw_rounded_rect, draw_text_centered, get_font_manager, point_in_rect,
@@ -25,19 +25,28 @@ class _GlossCache:
 
     @classmethod
     def get(cls, width: int, height: int, radius: int, alpha: int = 30) -> pygame.Surface:
+        """获取缓存的光泽贴图（上圆角 + 下边缘填平）/ Cached gloss surface"""
         key = (width, height, radius, alpha)
         surf = cls._cache.get(key)
         if surf is None:
             if len(cls._cache) >= cls._max:
                 cls._cache.clear()
-            surf = pygame.Surface((width, height), pygame.SRCALPHA)
-            pygame.draw.rect(surf, (255, 255, 255, alpha), (0, 0, width, height),
-                             border_radius=radius)
-            # 底部以下补齐同色矩形，让下边缘不圆滑（光泽只圆上角观感）
-            surf.fill((255, 255, 255, 0))
-            pygame.draw.rect(surf, (255, 255, 255, alpha), (0, 0, width, height),
-                             border_radius=radius)
-            cls._cache[key] = surf
+            ss = max(1, int(UI_SUPERSAMPLE))
+            w_ss, h_ss, radius_ss = width * ss, height * ss, radius * ss
+            hi = pygame.Surface((w_ss, h_ss), pygame.SRCALPHA)
+            # smoothscale 不预乘 alpha：透明底先填白色，避免光泽边缘发暗
+            hi.fill((255, 255, 255, 0))
+            pygame.draw.rect(hi, (255, 255, 255, alpha), (0, 0, w_ss, h_ss),
+                             border_radius=radius_ss)
+            # 用小矩形填平光泽底部的两个圆角（h 可能小于 radius，避免负尺寸）
+            fill_h = min(radius_ss, h_ss)
+            fill_w = w_ss - radius_ss * 2
+            if fill_h > 0 and fill_w > 0:
+                pygame.draw.rect(hi, (255, 255, 255, alpha),
+                                 (radius_ss, h_ss - fill_h, fill_w, fill_h))
+            if ss > 1:
+                hi = pygame.transform.smoothscale(hi, (width, height))
+            cls._cache[key] = surf = hi
         return surf
 
     @classmethod
@@ -45,13 +54,7 @@ class _GlossCache:
                        radius: int, alpha: int = 30, fraction: float = 0.45) -> None:
         """在 rect 上部绘制一层玻璃光泽 / Draw gloss on the top part of rect"""
         h = max(2, int(rect.height * fraction))
-        surf = pygame.Surface((rect.width, h), pygame.SRCALPHA)
-        pygame.draw.rect(surf, (255, 255, 255, alpha), (0, 0, rect.width, h),
-                         border_radius=radius)
-        # 用小矩形填平光泽底部的两个圆角
-        pygame.draw.rect(surf, (255, 255, 255, alpha), (radius, h - radius,
-                                                        rect.width - radius * 2, radius))
-        surface.blit(surf, rect.topleft)
+        surface.blit(cls.get(rect.width, h, radius, alpha), rect.topleft)
 
 
 class UIComponent:
@@ -195,7 +198,7 @@ class Button(UIComponent):
         if event.type == pygame.MOUSEMOTION:
             self.is_hovered = point_in_rect(event.pos, self.rect)
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1 and self.is_hovered:
+            if event.button == 1 and self.rect.collidepoint(event.pos):
                 self.is_pressed = True
                 self._target_scale = 0.96
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -204,7 +207,7 @@ class Button(UIComponent):
                 self._target_scale = 1.0
                 self._bounce_scale = 0.98
                 self._bounce_velocity = 0.1
-                if self.is_hovered and self.callback:
+                if self.rect.collidepoint(event.pos) and self.callback:
                     self.callback()
                     return True
         return False
@@ -582,16 +585,12 @@ class iOSInput(UIComponent):
         if not self.visible:
             return
 
-        draw_rounded_rect(surface, self.bg_color, self.rect, self.radius)
-
         border_color = self.focus_border_color if self.is_focused else self.border_color
         border_width = 2 if self.is_focused else 1
-        pygame.draw.rect(
-            surface,
-            border_color,
-            self.rect,
-            width=border_width,
-            border_radius=self.radius
+        # 底色 + 边框一次成型（带边框缓存路径已超采样）
+        draw_rounded_rect(
+            surface, self.bg_color, self.rect, self.radius,
+            border_width=border_width, border_color=border_color,
         )
 
         font = get_font_manager().get_font(self.font_size)

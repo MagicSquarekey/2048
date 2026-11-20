@@ -11,7 +11,7 @@ import pygame
 from src.config import (
     BOARD_SIZE, TILE_SIZE, TILE_GAP, BOARD_PADDING,
     BOARD_X, BOARD_Y, COLOR_BOARD_BG, COLOR_TILE_EMPTY,
-    TILE_FONT_SIZES,
+    TILE_FONT_SIZES, UI_SUPERSAMPLE,
     ANIMATION_MOVE_DURATION, ANIMATION_MERGE_DURATION, ANIMATION_SPAWN_DURATION,
 )
 from src.models.board import GameBoard
@@ -19,13 +19,15 @@ from src.models.tile import Tile
 from src.utils import (
     get_font_manager,
     ease_out_cubic, ease_out_back, lerp, get_tile_color,
-    lighten, draw_card, draw_glow, draw_gradient_rounded_rect,
+    lighten, draw_card, draw_glow,
 )
 from src.views.effects import ScreenShake
 
 # 高级方块（>=128）预渲染外发光的边距（px）
 _TILE_GLOW_PAD = 10
 _TILE_RADIUS = 14
+# 静态图形超采样倍数（至少 1）/ Static-graphics supersampling factor (>=1)
+_SS = max(1, int(UI_SUPERSAMPLE))
 
 
 class TileSurfaceCache:
@@ -35,6 +37,10 @@ class TileSurfaceCache:
     将 (辉光 + 渐变底 + 轮辋光 + 顶部光泽 + 数字投影) 一次成型并按值缓存，
     静止方块每帧只需一次 blit。>=128 的方块自带同色霓虹辉光。
     缓存值为 (surface, pad)，pad 为辉光外边距，blit 时向左上偏移。
+
+    绘制在 TILE_SIZE*_SS 的高分辨率画布上，最后 smoothscale 回原尺寸；
+    内部直接按 _SS 放大绘制，不调用已超采样的 draw_glow / draw_gradient_rounded_rect，
+    避免二次超采样（4x 内存与耗时）。
     """
 
     _cache: dict = {}
@@ -47,34 +53,78 @@ class TileSurfaceCache:
             glow = value >= 128
             pad = _TILE_GLOW_PAD if glow else 0
             size = TILE_SIZE + pad * 2
-            surface = pygame.Surface((size, size), pygame.SRCALPHA)
+            ss = _SS
+            tile_ss = TILE_SIZE * ss
+            pad_ss = pad * ss
+            radius_ss = _TILE_RADIUS * ss
+            surface_hi = pygame.Surface((size * ss, size * ss), pygame.SRCALPHA)
+            # smoothscale 不预乘 alpha：透明底先用方块底色填充，避免边缘发暗
+            surface_hi.fill((*bg_color, 0))
+            inner = pygame.Rect(pad_ss, pad_ss, tile_ss, tile_ss)
 
-            inner = pygame.Rect(pad, pad, TILE_SIZE, TILE_SIZE)
             if glow:
-                draw_glow(surface, inner, bg_color, alpha=110, blur=pad, radius=_TILE_RADIUS)
-            draw_gradient_rounded_rect(
-                surface, inner, lighten(bg_color, 1.28), bg_color, _TILE_RADIUS,
+                # 与 draw_glow 等效的同心圆角矩形循环（blur 层已按 ss 放大）
+                for i in range(pad_ss, 0, -1):
+                    layer_alpha = int(110 * (1 - i / (pad_ss + 1)) ** 1.5)
+                    layer_rect = inner.inflate(i * 2, i * 2)
+                    pygame.draw.rect(
+                        surface_hi, (*bg_color, layer_alpha), layer_rect,
+                        border_radius=radius_ss + i,
+                    )
+
+            # 渐变底：在 tile_ss 临时 Surface 上逐行绘制，再用圆角蒙版裁切
+            grad = pygame.Surface((tile_ss, tile_ss), pygame.SRCALPHA)
+            grad.fill((*bg_color, 0))
+            top_color = lighten(bg_color, 1.28)
+            for y in range(tile_ss):
+                t = y / max(1, tile_ss - 1)
+                color = (
+                    int(top_color[0] + (bg_color[0] - top_color[0]) * t),
+                    int(top_color[1] + (bg_color[1] - top_color[1]) * t),
+                    int(top_color[2] + (bg_color[2] - top_color[2]) * t),
+                )
+                pygame.draw.line(grad, color, (0, y), (tile_ss, y))
+            # 蒙版透明区保持白色 RGB，用 MULT 只改 alpha、保留渐变 RGB，
+            # 避免缩小时圆角被透明黑压暗
+            mask = pygame.Surface((tile_ss, tile_ss), pygame.SRCALPHA)
+            mask.fill((255, 255, 255, 0))
+            pygame.draw.rect(
+                mask, (255, 255, 255, 255), (0, 0, tile_ss, tile_ss),
+                border_radius=radius_ss,
             )
-            # 轮辋光：整圈 2px 提亮描边，塑造体积感
-            pygame.draw.rect(surface, lighten(bg_color, 1.55), inner, width=2,
-                             border_radius=_TILE_RADIUS)
+            grad.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+            surface_hi.blit(grad, inner.topleft)
+
+            # 轮辋光：整圈描边，塑造体积感（宽度按 ss 放大保持观感）
+            pygame.draw.rect(
+                surface_hi, lighten(bg_color, 1.55), inner,
+                width=max(1, 2 * ss), border_radius=radius_ss,
+            )
             # 顶部光泽：上半部白色低透明圆角，经典玻璃高光
             gloss_h = int(TILE_SIZE * 0.42)
-            gloss = pygame.Surface((TILE_SIZE, gloss_h), pygame.SRCALPHA)
-            pygame.draw.rect(gloss, (255, 255, 255, 30), (0, 0, TILE_SIZE, gloss_h),
-                             border_radius=_TILE_RADIUS)
-            surface.blit(gloss, (pad, pad))
+            gloss = pygame.Surface((tile_ss, gloss_h * ss), pygame.SRCALPHA)
+            # 透明底用方块底色填充，避免光泽圆角处混入透明黑
+            gloss.fill((*bg_color, 0))
+            pygame.draw.rect(
+                gloss, (255, 255, 255, 30), (0, 0, tile_ss, gloss_h * ss),
+                border_radius=radius_ss,
+            )
+            surface_hi.blit(gloss, (pad_ss, pad_ss))
 
-            font_size = TILE_FONT_SIZES.get(value, 28)
+            font_size = TILE_FONT_SIZES.get(value, 28) * ss
             font = get_font_manager().get_font(font_size, bold=True)
             center = inner.center
-            # 数字投影（向下 2px 半透明深色），增强立体感
+            # 数字投影（向下 2*ss px 半透明深色），增强立体感
             shadow = font.render(str(value), True, (0, 0, 0))
             shadow.set_alpha(80)
-            surface.blit(shadow, shadow.get_rect(center=(center[0], center[1] + 2)))
+            surface_hi.blit(shadow, shadow.get_rect(center=(center[0], center[1] + 2 * ss)))
             text = font.render(str(value), True, text_color)
-            surface.blit(text, text.get_rect(center=center))
+            surface_hi.blit(text, text.get_rect(center=center))
 
+            if ss > 1:
+                surface = pygame.transform.smoothscale(surface_hi, (size, size))
+            else:
+                surface = surface_hi
             entry = (surface, pad)
             cls._cache[value] = entry
         return entry
@@ -156,14 +206,24 @@ class BoardView:
         size = (TILE_SIZE, TILE_SIZE, COLOR_TILE_EMPTY)
         surf = self._empty_cache.get(size)
         if surf is None:
-            surf = pygame.Surface((TILE_SIZE, TILE_SIZE), pygame.SRCALPHA)
-            pygame.draw.rect(surf, COLOR_TILE_EMPTY, (0, 0, TILE_SIZE, TILE_SIZE),
-                             border_radius=10)
-            # 内凹感：顶部 1px 暗边 + 底部 1px 亮边
-            pygame.draw.line(surf, lighten(COLOR_TILE_EMPTY, 0.72), (8, 1),
-                             (TILE_SIZE - 8, 1))
-            pygame.draw.line(surf, lighten(COLOR_TILE_EMPTY, 1.22), (8, TILE_SIZE - 2),
-                             (TILE_SIZE - 8, TILE_SIZE - 2))
+            ss = _SS
+            w_ss = TILE_SIZE * ss
+            hi = pygame.Surface((w_ss, w_ss), pygame.SRCALPHA)
+            # smoothscale 不预乘 alpha：透明底先用空格底色填充，避免边缘发暗
+            hi.fill((*COLOR_TILE_EMPTY, 0))
+            pygame.draw.rect(hi, COLOR_TILE_EMPTY, (0, 0, w_ss, w_ss),
+                             border_radius=10 * ss)
+            # 内凹感：顶部 1px 暗边 + 底部 1px 亮边（坐标与线宽按 ss 放大）
+            line_w = max(1, ss)
+            pygame.draw.line(hi, lighten(COLOR_TILE_EMPTY, 0.72), (8 * ss, ss),
+                             (w_ss - 8 * ss, ss), line_w)
+            pygame.draw.line(hi, lighten(COLOR_TILE_EMPTY, 1.22),
+                             (8 * ss, (TILE_SIZE - 2) * ss),
+                             (w_ss - 8 * ss, (TILE_SIZE - 2) * ss), line_w)
+            if ss > 1:
+                surf = pygame.transform.smoothscale(hi, (TILE_SIZE, TILE_SIZE))
+            else:
+                surf = hi
             self._empty_cache[size] = surf
         return surf
 

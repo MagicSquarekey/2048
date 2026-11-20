@@ -218,6 +218,7 @@ class GamePage(Page):
         self._floaters = []
         self._ending = False
         self._end_timer = 0.0
+        self._swipe_start = None
         self.particles.clear()
 
         mode = kwargs.get("mode", "classic")
@@ -267,8 +268,11 @@ class GamePage(Page):
                 self._swipe_start = event.pos
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1 and self._swipe_start:
-                self._handle_swipe(event.pos)
-                self._swipe_start = None
+                if getattr(event, "outside_viewport", False):
+                    self._swipe_start = None      # 留边抬起：只清手势，不移动
+                else:
+                    self._handle_swipe(event.pos)
+                    self._swipe_start = None
 
         return None
 

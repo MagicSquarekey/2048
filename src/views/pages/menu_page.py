@@ -41,12 +41,12 @@ class ModeCard:
         if event.type == pygame.MOUSEMOTION:
             self.is_hovered = point_in_rect(event.pos, self.rect)
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1 and self.is_hovered:
+            if event.button == 1 and self.rect.collidepoint(event.pos):
                 self.is_pressed = True
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1 and self.is_pressed:
                 self.is_pressed = False
-                if self.is_hovered:
+                if self.rect.collidepoint(event.pos):
                     self.callback()
                     return True
         return False

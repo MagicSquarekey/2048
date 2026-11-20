@@ -30,21 +30,23 @@ from src.config import (
     KEY_REPEAT_DELAY_MS, KEY_REPEAT_INTERVAL_MS,
     TRANSITION_DURATION,
 )
-from src.utils import blit_background, blit_overlay
+from src.utils import blit_background
+from src.views.display_manager import DisplayManager
 from src.views.pages import (
     PageManager, MenuPage, GamePage, ResultPage,
     SettingsPage, AchievementsPage, PausePage, LoginPage,
 )
 
 
-def init_pygame() -> pygame.Surface:
-    """初始化 Pygame / Initialize Pygame"""
+def init_pygame() -> DisplayManager:
+    """初始化 Pygame 与显示管理器 / Initialize Pygame and the display manager"""
     pygame.init()
     pygame.display.set_caption("2048 - 休闲游戏")
-    surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+    dm = DisplayManager()
+    dm.init(pygame.RESIZABLE)
     # 方向键按住连发：配合游戏页输入队列实现按住连续滑动
     pygame.key.set_repeat(KEY_REPEAT_DELAY_MS, KEY_REPEAT_INTERVAL_MS)
-    return surface
+    return dm
 
 
 class FadeTransition:
@@ -113,7 +115,8 @@ def register_pages() -> PageManager:
 
 def main() -> None:
     """主函数 / Main entry point"""
-    surface = init_pygame()
+    dm = init_pygame()
+    canvas = dm.canvas
     clock = pygame.time.Clock()
     pm = register_pages()
     transition = FadeTransition()
@@ -179,6 +182,27 @@ def main() -> None:
 
         # 事件处理
         for event in pygame.event.get():
+            # 窗口缩放：先调整视口，再补发一次鼠标移动以刷新 hover 状态
+            # Window resize: update the viewport, then replay a motion to refresh hover.
+            if event.type == pygame.VIDEORESIZE:
+                dm.resize(event.w, event.h)
+                try:
+                    win_pos = pygame.mouse.get_pos()
+                    motion_pos = (
+                        dm.map_pos(win_pos)
+                        if dm.is_inside_viewport(win_pos)
+                        else (-1, -1)
+                    )
+                    motion = pygame.event.Event(
+                        pygame.MOUSEMOTION,
+                        {"pos": motion_pos, "rel": (0, 0), "buttons": pygame.mouse.get_pressed()},
+                    )
+                    if pm.current_page:
+                        pm.current_page.handle_event(motion)
+                except pygame.error:
+                    pass
+                continue
+
             if event.type == pygame.QUIT:
                 running = False
                 break
@@ -186,6 +210,20 @@ def main() -> None:
             # 过渡 out 阶段屏蔽输入，防止点到旧页面
             if transition.blocking:
                 continue
+
+            # 鼠标事件先从窗口坐标换算到 800x600 逻辑坐标。
+            # 留边区域不参与交互：按下被吞掉，悬停坐标清除；抬起仍正常分发。
+            # Convert mouse events to logical coordinates first. Letterbox presses are
+            # swallowed and letterbox hover is cleared; button-up still dispatches.
+            if event.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
+                inside = dm.is_inside_viewport(event.pos)
+                event.outside_viewport = not inside
+                dm.translate_event(event)
+                if not inside:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        continue
+                    if event.type == pygame.MOUSEMOTION:
+                        event.pos = (-1, -1)
 
             # 全局快捷键
             if event.type == pygame.KEYDOWN:
@@ -222,10 +260,10 @@ def main() -> None:
         transition.update(dt)
 
         # 绘制
-        blit_background(surface)
-        pm.draw(surface)
-        transition.draw(surface)
-        pygame.display.flip()
+        blit_background(canvas)
+        pm.draw(canvas)
+        transition.draw(canvas)
+        dm.present()
 
     pygame.quit()
     sys.exit(0)
