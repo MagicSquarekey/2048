@@ -4,7 +4,7 @@
 > **编写日期：** 2026-08-25  
 > **编写人：** 文档工程师  
 > **所属团队：** 2048-iOS-Style-Team-v3  
-> **项目路径：** `C:\Users\10359\Desktop\2048`
+> **项目路径：** `E:\VibeCoding\MagicSquareKey\2048`
 
 ---
 
