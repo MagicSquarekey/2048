@@ -37,8 +37,11 @@ def test_shadow_performance():
     for _ in range(iterations):
         draw_shadow_optimized(screen, test_rect)
     optimized_cached_time = time.time() - start_time
-    
-    pygame.quit()
+
+    # 不要在这里 pygame.quit()：pytest 同进程内的后续测试会复用
+    # FontManager 的字体缓存，quit 后这些 SDL_ttf 句柄失效，继续渲染会崩溃。
+    # Do not quit pygame here: later tests reuse FontManager's cached fonts in
+    # the same process, and those SDL_ttf handles become invalid after quit.
     
     # 输出结果
     print("=" * 60)
