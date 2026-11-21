@@ -235,9 +235,14 @@ class Label(UIComponent):
         text_surface = font.render(text, True, color)
         w, h = text_surface.get_size()
         if centered:
-            super().__init__(x - w // 2, y - h // 2, w, h)
+            super().__init__(0, 0, w, h)
+            self.rect.center = (x, y)
+            # 记录锚点，set_text 改变文字宽度后仍保持居中
+            # Keep the anchor so set_text can recenter after the width changes.
+            self._anchor_center = (x, y)
         else:
             super().__init__(x, y, w, h)
+            self._anchor_center = None
 
     def draw(self, surface: pygame.Surface) -> None:
         if not self.visible:
@@ -249,12 +254,16 @@ class Label(UIComponent):
             surface.blit(font.render(self.text, True, self.color), self.rect.topleft)
 
     def set_text(self, text: str) -> None:
+        """更新文字并保持布局锚点 / Update text while keeping the layout anchor"""
         self.text = text
         font = get_font_manager().get_font(self.font_size, self.bold)
         text_surface = font.render(text, True, self.color)
         w, h = text_surface.get_size()
-        self.rect.width = w
-        self.rect.height = h
+        self.rect.size = (w, h)
+        if self.centered:
+            # 居中标签：以原锚点重新居中，避免文字变宽后向右偏移
+            # Centered labels keep their original anchor instead of drifting right.
+            self.rect.center = self._anchor_center
 
 
 class Panel(UIComponent):

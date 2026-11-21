@@ -15,9 +15,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pygame  # noqa: E402
 
-from src.views.ui_components import Button  # noqa: E402
+from src.config import WINDOW_WIDTH  # noqa: E402
+from src.views.ui_components import Button, Label  # noqa: E402
 from src.views.pages.menu_page import ModeCard  # noqa: E402
 from src.views.pages.game_page import GamePage  # noqa: E402
+from src.views.pages.result_page import ResultPage  # noqa: E402
 
 
 def _mouse_event(event_type: int, pos: tuple, button: int = 1) -> pygame.event.Event:
@@ -138,6 +140,42 @@ class TestGamePageLetterboxSwipe(_DisplayTestCase):
             do_move.assert_called_once()
 
         self.assertIsNone(self.game._swipe_start)
+
+
+class TestLabelLayout(_DisplayTestCase):
+    """Label.set_text 保持布局锚点 / Label.set_text keeps the layout anchor"""
+
+    def test_centered_label_keeps_center_after_set_text(self) -> None:
+        """居中标签换文字后仍居中 / Centered labels stay centered"""
+        label = Label(200, 100, "", font_size=28, bold=True, centered=True)
+        self.assertEqual(label.rect.center, (200, 100))
+
+        label.set_text("游戏结束")
+        self.assertEqual(label.rect.center, (200, 100))
+
+        label.set_text("恭喜获胜")
+        self.assertEqual(label.rect.center, (200, 100))
+
+    def test_non_centered_label_keeps_topleft(self) -> None:
+        """左对齐标签换文字后左上角不变 / Left-aligned labels keep their top-left"""
+        label = Label(50, 60, "A", centered=False)
+        label.set_text("AAA")
+        self.assertEqual((label.rect.x, label.rect.y), (50, 60))
+
+    def test_result_page_dynamic_labels_stay_centered(self) -> None:
+        """结算页标题与滚动分数保持水平居中 / Result title and score stay centered"""
+        page = ResultPage()
+        page.on_enter(result={
+            "score": 1444, "is_win": False, "mode": "classic",
+            "max_tile": 128, "move_count": 151, "elapsed_time": 54,
+        })
+
+        cx = WINDOW_WIDTH // 2
+        self.assertEqual(page.title_label.rect.center, (cx, page.panel_rect.y + 46))
+        self.assertEqual(page.score_label.rect.center, (cx, page.panel_rect.y + 136))
+
+        page.score_label.set_text("1444")
+        self.assertEqual(page.score_label.rect.center, (cx, page.panel_rect.y + 136))
 
 
 if __name__ == "__main__":

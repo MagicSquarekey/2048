@@ -125,11 +125,11 @@ class SettingsPage(Page):
         current = get_language()
         new_lang = "en" if current == "zh" else "zh"
         set_language(new_lang)
-        self.lang_value.text = new_lang.upper()
-        self.sound_label.text = t("sound")
-        self.music_label.text = t("music")
-        self.lang_label.text = t("language")
-        self.title_label.text = t("settings")
+        self.lang_value.set_text(new_lang.upper())
+        self.sound_label.set_text(t("sound"))
+        self.music_label.set_text(t("music"))
+        self.lang_label.set_text(t("language"))
+        self.title_label.set_text(t("settings"))
         # 按钮 / 弹窗文案同步刷新
         self.btn_reset.text = t("reset_data")
         self.btn_back.text = t("back_to_menu")
@@ -170,7 +170,7 @@ class SettingsPage(Page):
                 switch.rect.x + switch.rect.width - 29
             switch._thumb_x = switch._target_x
 
-        self.lang_value.text = get_language().upper()
+        self.lang_value.set_text(get_language().upper())
         self._update_lang_value_pos()
 
     def on_enter(self, **kwargs: Any) -> None:
